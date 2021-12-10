@@ -1,16 +1,16 @@
-package dev.phonis.cosmicafkclient.client;
+package dev.phonis.discordminecraftmulticlient.client;
 
-import dev.phonis.cosmicafkclient.CosmicAFKClient;
-import dev.phonis.cosmicafkclient.auth.AuthUtil;
-import dev.phonis.cosmicafkclient.auth.Authenticator;
-import dev.phonis.cosmicafkclient.auth.SessionToken;
-import dev.phonis.cosmicafkclient.chat.ParseUtils;
-import dev.phonis.cosmicafkclient.protocol.DataTypes;
-import dev.phonis.cosmicafkclient.protocol.McSocket;
-import dev.phonis.cosmicafkclient.protocol.Packet;
-import dev.phonis.cosmicafkclient.util.LockUtils;
-import dev.phonis.cosmicafkclient.util.NameChangeHandler;
-import dev.phonis.cosmicafkclient.util.SafelyStoppableThread;
+import dev.phonis.discordminecraftmulticlient.DiscordMinecraftMultiClient;
+import dev.phonis.discordminecraftmulticlient.auth.AuthUtil;
+import dev.phonis.discordminecraftmulticlient.auth.Authenticator;
+import dev.phonis.discordminecraftmulticlient.auth.SessionToken;
+import dev.phonis.discordminecraftmulticlient.chat.ParseUtils;
+import dev.phonis.discordminecraftmulticlient.protocol.DataTypes;
+import dev.phonis.discordminecraftmulticlient.protocol.McSocket;
+import dev.phonis.discordminecraftmulticlient.protocol.Packet;
+import dev.phonis.discordminecraftmulticlient.util.LockUtils;
+import dev.phonis.discordminecraftmulticlient.util.NameChangeHandler;
+import dev.phonis.discordminecraftmulticlient.util.SafelyStoppableThread;
 
 import javax.crypto.*;
 import java.io.IOException;
@@ -32,7 +32,6 @@ public class McClient {
 
     public final String username;
     public final String password;
-    public final String planet;
     public final String serverIP;
     public final int port;
     private boolean validSession = false;
@@ -43,7 +42,6 @@ public class McClient {
     private boolean loginPhase;
     private SafelyStoppableThread mainThread;
     private SafelyStoppableThread senderThread;
-    private SafelyStoppableThread afkThread;
     private final BlockingQueue<Packet> sendingQueue = new LinkedBlockingQueue<>();
     private SessionToken sessionToken;
     private String playerName;
@@ -52,10 +50,9 @@ public class McClient {
     private final ReentrantLock shutdownLock = new ReentrantLock(); // prevents race conditions during the shutdown process
     private final ReentrantLock startStopLock = new ReentrantLock(); // prevents starting/stopping at same time
 
-    public McClient(String username, String password, String planet, String serverIP, int port, NameChangeHandler nameChangeHandler) {
+    public McClient(String username, String password, String serverIP, int port, NameChangeHandler nameChangeHandler) {
         this.username = username;
         this.password = password;
-        this.planet = planet;
         this.serverIP = serverIP;
         this.port = port;
         this.nameChangeHandler = nameChangeHandler;
@@ -78,7 +75,7 @@ public class McClient {
     }
 
     public void queueMessage(String message) throws InterruptedException {
-        this.sendingQueue.put(new Packet(0x01, DataTypes.stringBytes(message)));
+        this.sendingQueue.put(new Packet(0x03, DataTypes.stringBytes(message)));
     }
 
     public void restartClient() throws InterruptedException {
@@ -177,11 +174,12 @@ public class McClient {
                     this.shutdown();
                 }
             );
+            Thread.sleep(10000);
         }
     }
 
     private void shutdown() throws InterruptedException {
-        SafelyStoppableThread.stopAll(this.afkThread, this.senderThread);
+        SafelyStoppableThread.stopAll(this.senderThread);
         this.sendingQueue.clear();
         this.shutdownSocket();
     }
@@ -223,7 +221,7 @@ public class McClient {
         );
         if ((old == null || !old.equals(this.playerName)) && this.playerName != null) this.nameChangeHandler.onNameChange(this, this.playerName, old);
 
-        CosmicAFKClient.embedWithPlayer(this.sessionToken.playerName, "Auth", "Logged in as: " + this.sessionToken.playerName);
+        DiscordMinecraftMultiClient.embedWithPlayer(this.sessionToken.playerName, "Auth", "Logged in as: " + this.sessionToken.playerName);
         LoginQueue.waitForTurn(); // avoid connection throttled
         /*
         Thread Closing
@@ -252,7 +250,7 @@ public class McClient {
     }
 
     private boolean login(SessionToken sessionToken) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, InvalidParameterSpecException, DataFormatException, InterruptedException {
-        byte[] protocol_version = DataTypes.varIntBytes(47);
+        byte[] protocol_version = DataTypes.varIntBytes(757);
         byte[] server_port = DataTypes.uShortBytes(this.port);
         byte[] next_state = DataTypes.varIntBytes(2);
         byte[] handshake_packet = DataTypes.concatBytes(
@@ -273,7 +271,7 @@ public class McClient {
 
             switch (packet.id) {
                 case 0x00 -> {
-                    CosmicAFKClient.log("Login rejected " + this.playerName + ": " + DataTypes.getString(packet.inputStream));
+                    DiscordMinecraftMultiClient.log("Login rejected " + this.playerName + ": " + DataTypes.getString(packet.inputStream));
 
                     return false;
                 }
@@ -287,7 +285,7 @@ public class McClient {
                 }
 
                 case 0x02 -> {
-                    CosmicAFKClient.log("Login successful " + this.playerName);
+                    DiscordMinecraftMultiClient.log("Login successful " + this.playerName);
 
                     this.loginPhase = false;
 
@@ -327,31 +325,6 @@ public class McClient {
         );
     }
 
-    private void startAFKThread() throws InterruptedException {
-        LockUtils.withLockInterruptable(this.shutdownLock, // don't start afk thread while client shutting down
-            () -> {
-                this.checkInterrupted();
-
-                this.afkThread = new SafelyStoppableThread(
-                    () -> {
-                        while (!Thread.currentThread().isInterrupted()) {
-                            try {
-                                this.queueMessage("/server " + this.planet);
-                                Thread.sleep(10000);
-                                this.queueMessage("/ping"); // anti afk
-                                Thread.sleep(10000);
-                            } catch (InterruptedException e) {
-                                break;
-                            }
-                        }
-                    }
-                );
-
-                this.afkThread.start();
-            }
-        );
-    }
-
     private boolean handlePacket(Packet packet) throws IOException, InterruptedException {
         if (this.loginPhase) {
             switch (packet.id) {
@@ -363,45 +336,31 @@ public class McClient {
                     this.socket.sendPacket(0x02, DataTypes.concatBytes(DataTypes.varIntBytes(messageID), DataTypes.booleanBytes(false)));
                 }
 
-                default -> CosmicAFKClient.log("Unknown packet of ID: " + packet.id);
+                default -> DiscordMinecraftMultiClient.log("Unknown packet of ID: " + packet.id);
             }
         } else {
             switch (packet.id) {
-                case 0x00 -> this.sendingQueue.put(new Packet(0x00, packet.inputStream.readAllBytes()));
+                case 0x21 -> this.sendingQueue.put(new Packet(0x0F, packet.inputStream.readAllBytes()));
 
-                case 0x01 -> {
-                    this.startSenderThread();
-                    this.startAFKThread();
-                }
+                case 0x26 -> this.startSenderThread();
 
-                case 0x02 -> {
+                case 0x0F -> {
                     String rawJson = DataTypes.getString(packet.inputStream);
                     String rawMessage = ParseUtils.getRawMessage(rawJson);
 
                     if (rawMessage == null) break;
 
                     // if system output enabled
-                    if (this.sysOut.get() % 2 == 0) CosmicAFKClient.log(rawMessage);
+                    if (this.sysOut.get() % 2 == 0) DiscordMinecraftMultiClient.log(rawMessage);
 
-                    String playerName = ParseUtils.getTPRequesterIfTP(rawMessage);
-
-                    if (playerName == null) break;
-
-                    CosmicAFKClient.embedWithPlayer(playerName, "Auto /tpaccept", playerName + " is requesting a teleport");
-
-                    if (CosmicAFKClient.whitelisted.contains(playerName)) {
-                        CosmicAFKClient.embedWithPlayer(this.playerName, "Auto /tpaccept", "Accepting " + playerName + "'s request as " + this.playerName);
-                        this.queueMessage("/tpaccept");
-                    }
+                    if (rawMessage.contains("sleep")) return false;
                 }
 
-                case 0x40 -> {
-                    CosmicAFKClient.log(DataTypes.getString(packet.inputStream));
+                case 0x1A -> {
+                    DiscordMinecraftMultiClient.log(DataTypes.getString(packet.inputStream));
 
                     return false;
                 }
-
-                case 0x46 -> this.socket.setCompressionThreshold(DataTypes.getVarInt(packet.inputStream));
 
                 default -> {
                     // Main.log("Unknown packet of ID: " + new BigInteger(String.valueOf(packet.id)).toString(16));
@@ -425,14 +384,14 @@ public class McClient {
         this.checkInterrupted();
 
         if (!AuthUtil.sessionCheck(serverHash, sessionToken.playerID, sessionToken.id)) {
-            CosmicAFKClient.log("Failed to check session "  + this.playerName);
+            DiscordMinecraftMultiClient.log("Failed to check session "  + this.playerName);
 
             this.validSession = false;
 
             return false;
         }
 
-        CosmicAFKClient.log("Session checked " + this.playerName);
+        DiscordMinecraftMultiClient.log("Session checked " + this.playerName);
 
         this.validSession = true;
         Cipher encryptCipher = Cipher.getInstance("RSA");
@@ -449,15 +408,15 @@ public class McClient {
             Packet packet = this.socket.readPacket();
 
             if (packet.id < 0) {
-                CosmicAFKClient.log("LOGIN FAILED " + this.playerName);
+                DiscordMinecraftMultiClient.log("LOGIN FAILED " + this.playerName);
 
                 return false;
             } else if (packet.id == 0x00) {
-                CosmicAFKClient.log("LOGIN REJECTED " + this.playerName + ": " + DataTypes.getString(packet.inputStream));
+                DiscordMinecraftMultiClient.log("LOGIN REJECTED " + this.playerName + ": " + DataTypes.getString(packet.inputStream));
 
                 return false;
             } else if (packet.id == 0x02) {
-                CosmicAFKClient.log("LOGIN SUCCESS " + this.playerName);
+                DiscordMinecraftMultiClient.log("LOGIN SUCCESS " + this.playerName);
 
                 this.loginPhase = false;
 

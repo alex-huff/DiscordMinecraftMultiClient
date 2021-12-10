@@ -1,4 +1,4 @@
-package dev.phonis.cosmicafkclient.auth;
+package dev.phonis.discordminecraftmulticlient.auth;
 
 import java.util.UUID;
 

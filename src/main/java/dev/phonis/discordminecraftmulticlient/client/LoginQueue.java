@@ -1,7 +1,7 @@
-package dev.phonis.cosmicafkclient.client;
+package dev.phonis.discordminecraftmulticlient.client;
 
-import dev.phonis.cosmicafkclient.CosmicAFKClient;
-import dev.phonis.cosmicafkclient.util.Waiter;
+import dev.phonis.discordminecraftmulticlient.DiscordMinecraftMultiClient;
+import dev.phonis.discordminecraftmulticlient.util.Waiter;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -20,7 +20,7 @@ public class LoginQueue {
                 }
             }
 
-            CosmicAFKClient.log("Closing restarter thread");
+            DiscordMinecraftMultiClient.log("Closing restarter thread");
         }
     );
 

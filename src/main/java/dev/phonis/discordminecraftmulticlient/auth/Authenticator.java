@@ -1,7 +1,7 @@
-package dev.phonis.cosmicafkclient.auth;
+package dev.phonis.discordminecraftmulticlient.auth;
 
-import dev.phonis.cosmicafkclient.CosmicAFKClient;
-import dev.phonis.cosmicafkclient.util.ExponentialBackoff;
+import dev.phonis.discordminecraftmulticlient.DiscordMinecraftMultiClient;
+import dev.phonis.discordminecraftmulticlient.util.ExponentialBackoff;
 import fr.litarvan.openauth.AuthenticationException;
 
 import java.util.concurrent.BlockingQueue;
@@ -26,10 +26,10 @@ public class Authenticator {
 
                             backoff.onSuccess(); // yay!
                         } catch (AuthenticationException e) {
-                            CosmicAFKClient.log("Auth error on " + sessionResolver.username + ", backing off: " + backoff.getWaitTime());
-                            CosmicAFKClient.log(e.getErrorModel().getError());
-                            CosmicAFKClient.log(e.getErrorModel().getCause());
-                            CosmicAFKClient.log(e.getErrorModel().getErrorMessage());
+                            DiscordMinecraftMultiClient.log("Auth error on " + sessionResolver.username + ", backing off: " + backoff.getWaitTime());
+                            DiscordMinecraftMultiClient.log(e.getErrorModel().getError());
+                            DiscordMinecraftMultiClient.log(e.getErrorModel().getCause());
+                            DiscordMinecraftMultiClient.log(e.getErrorModel().getErrorMessage());
                             backoff.backoff(); // f
                         }
                     }
@@ -42,7 +42,7 @@ public class Authenticator {
 
             sessionQueue.forEach(sessionResolver -> sessionResolver.cancel(true));
             sessionQueue.clear();
-            CosmicAFKClient.log("Closing session thread");
+            DiscordMinecraftMultiClient.log("Closing session thread");
         }
     );
 
@@ -76,9 +76,9 @@ public class Authenticator {
 
                 sessionToken = AuthUtil.refresh(sessionResolver.sessionToken);
 
-                CosmicAFKClient.log("Successfully refreshed session");
+                DiscordMinecraftMultiClient.log("Successfully refreshed session");
             } catch (AuthenticationException e) {
-                CosmicAFKClient.log("Failed to refresh session, creating new one");
+                DiscordMinecraftMultiClient.log("Failed to refresh session, creating new one");
                 Authenticator.checkInterrupted();
 
                 sessionToken = AuthUtil.authenticate(sessionResolver.username, sessionResolver.password);

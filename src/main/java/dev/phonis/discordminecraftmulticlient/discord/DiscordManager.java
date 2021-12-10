@@ -1,7 +1,7 @@
-package dev.phonis.cosmicafkclient.discord;
+package dev.phonis.discordminecraftmulticlient.discord;
 
-import dev.phonis.cosmicafkclient.CosmicAFKClient;
-import dev.phonis.cosmicafkclient.client.McClient;
+import dev.phonis.discordminecraftmulticlient.DiscordMinecraftMultiClient;
+import dev.phonis.discordminecraftmulticlient.client.McClient;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
@@ -121,7 +121,7 @@ public class DiscordManager extends ListenerAdapter {
                 }
 
                 this.sendPlayerEmbed(commandArgs[1], "Whitelist", "Whitelisting " + commandArgs[1]);
-                CosmicAFKClient.whitelisted.add(commandArgs[1]);
+                DiscordMinecraftMultiClient.whitelisted.add(commandArgs[1]);
             }
 
             case "showme" -> {
@@ -133,7 +133,7 @@ public class DiscordManager extends ListenerAdapter {
 
                 String name = commandArgs[1];
 
-                if (CosmicAFKClient.multiClient.withClient(name, McClient::toggleOut)) {
+                if (DiscordMinecraftMultiClient.multiClient.withClient(name, McClient::toggleOut)) {
                     this.sendPlayerEmbed(name, "Toggle output", "Toggling " + name + "'s output");
                 } else {
                     this.sendMessage("No client with this player name yet");
@@ -149,7 +149,7 @@ public class DiscordManager extends ListenerAdapter {
 
                 String name = commandArgs[1];
 
-                if (CosmicAFKClient.multiClient.withClient(name, McClient::startClient)) {
+                if (DiscordMinecraftMultiClient.multiClient.withClient(name, McClient::startClient)) {
                     this.sendPlayerEmbed(name, "Starter", "Started " + name);
                 } else {
                     this.sendEmbed("Starter", "No client with this player name yet");
@@ -165,7 +165,7 @@ public class DiscordManager extends ListenerAdapter {
 
                 String name = commandArgs[1];
 
-                if (CosmicAFKClient.multiClient.withClientThrowable(name, McClient::stopClient)) {
+                if (DiscordMinecraftMultiClient.multiClient.withClientThrowable(name, McClient::stopClient)) {
                     this.sendPlayerEmbed(name, "Stopper", "Stopped " + name);
                 } else {
                     this.sendEmbed("Stopper", "No client with this player name yet");
@@ -173,18 +173,18 @@ public class DiscordManager extends ListenerAdapter {
             }
 
             case "restartall" -> {
-                CosmicAFKClient.multiClient.restartClients();
+                DiscordMinecraftMultiClient.multiClient.restartClients();
                 this.sendEmbed("Restarter", "Restarted all clients");
             }
 
             case "stopall" -> {
-                CosmicAFKClient.multiClient.stopClients();
+                DiscordMinecraftMultiClient.multiClient.stopClients();
                 this.sendEmbed("Stopper", "Stopped all clients");
             }
 
             case "exit" -> {
-                CosmicAFKClient.multiClient.stopClients();
-                CosmicAFKClient.shutdown();
+                DiscordMinecraftMultiClient.multiClient.stopClients();
+                DiscordMinecraftMultiClient.shutdown();
                 this.jda.shutdown();
             }
 
@@ -205,7 +205,7 @@ public class DiscordManager extends ListenerAdapter {
 
                 String message = messageBuilder.toString();
 
-                if (CosmicAFKClient.multiClient.withClientThrowable(name, client -> client.queueMessage(message))) {
+                if (DiscordMinecraftMultiClient.multiClient.withClientThrowable(name, client -> client.queueMessage(message))) {
                     this.sendPlayerEmbed(name, "Sender", "Sending '" + message + "' as " + name);
                 } else {
                     this.sendMessage("No client with this player name yet");
@@ -228,7 +228,7 @@ public class DiscordManager extends ListenerAdapter {
 
                 String message = messageBuilder.toString();
 
-                CosmicAFKClient.multiClient.forAllClientsThrowable(client -> client.queueMessage(message));
+                DiscordMinecraftMultiClient.multiClient.forAllClientsThrowable(client -> client.queueMessage(message));
                 this.sendEmbed("Sender", "Sent '" + message + "' from all players");
             }
 

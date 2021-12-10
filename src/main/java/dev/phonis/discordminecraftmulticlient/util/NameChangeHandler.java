@@ -1,6 +1,6 @@
-package dev.phonis.cosmicafkclient.util;
+package dev.phonis.discordminecraftmulticlient.util;
 
-import dev.phonis.cosmicafkclient.client.McClient;
+import dev.phonis.discordminecraftmulticlient.client.McClient;
 
 @FunctionalInterface
 public interface NameChangeHandler extends TriConsumer<McClient, String, String> {

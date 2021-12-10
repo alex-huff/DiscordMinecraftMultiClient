@@ -1,4 +1,4 @@
-package dev.phonis.cosmicafkclient.auth;
+package dev.phonis.discordminecraftmulticlient.auth;
 
 import fr.litarvan.openauth.AuthPoints;
 import fr.litarvan.openauth.AuthenticationException;

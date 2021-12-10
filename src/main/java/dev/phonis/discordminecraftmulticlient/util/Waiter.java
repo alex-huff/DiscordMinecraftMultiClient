@@ -1,4 +1,4 @@
-package dev.phonis.cosmicafkclient.util;
+package dev.phonis.discordminecraftmulticlient.util;
 
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;

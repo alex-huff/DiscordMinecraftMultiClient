@@ -24,11 +24,11 @@ dependencies {
 }
 
 shadowJar {
-    archiveBaseName.set('CosmicAFKClient')
+    archiveBaseName.set('DiscordMinecraftMultiClient')
     archiveClassifier.set('')
     archiveVersion.set('')
 
     manifest {
-        attributes 'Main-Class': 'dev.phonis.cosmicafkclient.CosmicAFKClient'
+        attributes 'Main-Class': 'dev.phonis.discordminecraftmulticlient.DiscordMinecraftMultiClient'
     }
 }

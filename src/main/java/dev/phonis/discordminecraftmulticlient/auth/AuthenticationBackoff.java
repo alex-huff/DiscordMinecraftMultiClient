@@ -1,6 +1,6 @@
-package dev.phonis.cosmicafkclient.auth;
+package dev.phonis.discordminecraftmulticlient.auth;
 
-import dev.phonis.cosmicafkclient.util.ExponentialBackoff;
+import dev.phonis.discordminecraftmulticlient.util.ExponentialBackoff;
 
 public class AuthenticationBackoff implements ExponentialBackoff {
 

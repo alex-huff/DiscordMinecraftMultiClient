@@ -1,4 +1,4 @@
-package dev.phonis.cosmicafkclient.util;
+package dev.phonis.discordminecraftmulticlient.util;
 
 @FunctionalInterface
 public interface ThrowableConsumer<T, E extends Throwable> {

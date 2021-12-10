@@ -1,7 +1,7 @@
-package dev.phonis.cosmicafkclient.client;
+package dev.phonis.discordminecraftmulticlient.client;
 
-import dev.phonis.cosmicafkclient.CosmicAFKClient;
-import dev.phonis.cosmicafkclient.util.ThrowableConsumer;
+import dev.phonis.discordminecraftmulticlient.DiscordMinecraftMultiClient;
+import dev.phonis.discordminecraftmulticlient.util.ThrowableConsumer;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -21,7 +21,7 @@ public class MultiClient {
         MultiClient multiClient = new MultiClient();
 
         try {
-            if (accountsFile.createNewFile()) CosmicAFKClient.log("Creating accounts file");
+            if (accountsFile.createNewFile()) DiscordMinecraftMultiClient.log("Creating accounts file");
 
             FileInputStream fileInputStream = new FileInputStream(accountsFile);
             BufferedReader reader = new BufferedReader(new InputStreamReader(fileInputStream, StandardCharsets.UTF_8));
@@ -30,21 +30,29 @@ public class MultiClient {
             while ((line = reader.readLine()) != null) {
                 String[] params = line.split(" ");
 
-                if (params.length != 3) continue;
+                if (params.length != 4) continue;
 
-                // proxypipe.cosmicpvp.com
+                int port;
+
+                try {
+                    port = Integer.parseInt(params[3]);
+                } catch (NumberFormatException e) {
+                    e.printStackTrace();
+
+                    continue;
+                }
+
                 multiClient.addClient(
                     params[0],
                     params[1],
                     params[2],
-                    "proxypipe.cosmicpvp.com",
-                    25565
+                    port
                 );
             }
 
             reader.close();
         } catch (IOException e) {
-            CosmicAFKClient.log("Failed to read " + accountsFile.getName());
+            DiscordMinecraftMultiClient.log("Failed to read " + accountsFile.getName());
         }
 
         return multiClient;
@@ -57,11 +65,11 @@ public class MultiClient {
         try {
             synchronized (this.stateLock) {
                 for (McClient client : this.clients) {
-                    writer.write(client.username + " " + client.password + " " + client.planet + '\n');
+                    writer.write(client.username + " " + client.password + " " + client.serverIP + " " + client.port + '\n');
                 }
             }
         } catch (IOException e) {
-            CosmicAFKClient.log("Failed to write accounts file");
+            DiscordMinecraftMultiClient.log("Failed to write accounts file");
         } finally {
             try {
                 writer.close();
@@ -71,16 +79,16 @@ public class MultiClient {
         }
     }
 
-    private void addClient(String username, String password, String planet, String serverIP, int port) {
-        McClient client = new McClient(username, password, planet, serverIP, port, this::onNameChange);
+    private void addClient(String username, String password, String serverIP, int port) {
+        McClient client = new McClient(username, password, serverIP, port, this::onNameChange);
 
         synchronized (this.stateLock) {
             this.clients.add(client);
         }
     }
 
-    public synchronized void addAndStartClient(String username, String password, String planet, String serverIP, int port) {
-        McClient client = new McClient(username, password, planet, serverIP, port, this::onNameChange);
+    public synchronized void addAndStartClient(String username, String password, String serverIP, int port) {
+        McClient client = new McClient(username, password, serverIP, port, this::onNameChange);
 
         synchronized (this.stateLock) {
             this.clients.add(client);
@@ -98,7 +106,7 @@ public class MultiClient {
             this.clientMap.put(to, client);
         }
 
-        CosmicAFKClient.log(client.username + "'s " + "name is: " + to);
+        DiscordMinecraftMultiClient.log(client.username + "'s " + "name is: " + to);
     }
 
     public synchronized void startClients() {
@@ -106,7 +114,7 @@ public class MultiClient {
             this.clients.forEach(McClient::startClient);
         }
 
-        CosmicAFKClient.log("Started all clients");
+        DiscordMinecraftMultiClient.log("Started all clients");
     }
 
     public synchronized void stopClients() throws InterruptedException {
@@ -120,7 +128,7 @@ public class MultiClient {
             client.stopClient();
         }
 
-        CosmicAFKClient.log("Stopped all clients");
+        DiscordMinecraftMultiClient.log("Stopped all clients");
     }
 
     public synchronized void restartClients() throws InterruptedException {
@@ -134,7 +142,7 @@ public class MultiClient {
             client.restartClient();
         }
 
-        CosmicAFKClient.log("Restarted all clients");
+        DiscordMinecraftMultiClient.log("Restarted all clients");
     }
 
     public synchronized boolean withClient(String name, Consumer<McClient> consumer) {

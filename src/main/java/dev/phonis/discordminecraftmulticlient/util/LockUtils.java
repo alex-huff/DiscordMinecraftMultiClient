@@ -1,4 +1,4 @@
-package dev.phonis.cosmicafkclient.util;
+package dev.phonis.discordminecraftmulticlient.util;
 
 import java.io.IOException;
 import java.util.concurrent.locks.ReentrantLock;

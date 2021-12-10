@@ -1,4 +1,4 @@
-package dev.phonis.cosmicafkclient.protocol;
+package dev.phonis.discordminecraftmulticlient.protocol;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;

@@ -1,16 +1,16 @@
-package dev.phonis.cosmicafkclient;
+package dev.phonis.discordminecraftmulticlient;
 
-import dev.phonis.cosmicafkclient.auth.Authenticator;
-import dev.phonis.cosmicafkclient.client.LoginQueue;
-import dev.phonis.cosmicafkclient.client.MultiClient;
-import dev.phonis.cosmicafkclient.discord.DiscordManager;
+import dev.phonis.discordminecraftmulticlient.auth.Authenticator;
+import dev.phonis.discordminecraftmulticlient.client.LoginQueue;
+import dev.phonis.discordminecraftmulticlient.client.MultiClient;
+import dev.phonis.discordminecraftmulticlient.discord.DiscordManager;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.ConcurrentSkipListSet;
 
-public class CosmicAFKClient {
+public class DiscordMinecraftMultiClient {
 
     public static final Set<String> whitelisted = new ConcurrentSkipListSet<>();
     public static MultiClient multiClient;
@@ -21,21 +21,21 @@ public class CosmicAFKClient {
 
     static {
         try {
-            if (CosmicAFKClient.whitelistFile.createNewFile()) System.out.println("Creating whitelist file");
+            if (DiscordMinecraftMultiClient.whitelistFile.createNewFile()) System.out.println("Creating whitelist file");
 
-            FileInputStream fileInputStream = new FileInputStream(CosmicAFKClient.whitelistFile);
+            FileInputStream fileInputStream = new FileInputStream(DiscordMinecraftMultiClient.whitelistFile);
             BufferedReader reader = new BufferedReader(new InputStreamReader(fileInputStream, StandardCharsets.UTF_8));
             String line;
 
             while ((line = reader.readLine()) != null) {
                 String[] params = line.split(" ");
 
-                CosmicAFKClient.whitelisted.add(params[0]);
+                DiscordMinecraftMultiClient.whitelisted.add(params[0]);
             }
 
             reader.close();
         } catch (IOException e) {
-            CosmicAFKClient.log("Failed to read " + CosmicAFKClient.whitelistFile.getName());
+            DiscordMinecraftMultiClient.log("Failed to read " + DiscordMinecraftMultiClient.whitelistFile.getName());
         }
     }
 
@@ -44,9 +44,9 @@ public class CosmicAFKClient {
 
         if (player.isEmpty() || player.isBlank()) return;
 
-        if (CosmicAFKClient.dm == null) return;
+        if (DiscordMinecraftMultiClient.dm == null) return;
 
-        CosmicAFKClient.dm.sendPlayerEmbed(player, title, message);
+        DiscordMinecraftMultiClient.dm.sendPlayerEmbed(player, title, message);
     }
 
     public static void log(String message) {
@@ -54,23 +54,23 @@ public class CosmicAFKClient {
 
         if (message.isEmpty() || message.isBlank()) return;
 
-        if (CosmicAFKClient.dm != null) {
-            CosmicAFKClient.dm.sendMessage(message);
+        if (DiscordMinecraftMultiClient.dm != null) {
+            DiscordMinecraftMultiClient.dm.sendMessage(message);
         } else {
             System.out.println(message); // for before DiscordManager is initialized
         }
     }
 
     public static void main(String[] args) throws IOException, InterruptedException {
-        CosmicAFKClient.multiClient = MultiClient.fromFile(CosmicAFKClient.accountsFile);
-        CosmicAFKClient.dm = new DiscordManager(CosmicAFKClient.getDiscordToken());
+        DiscordMinecraftMultiClient.multiClient = MultiClient.fromFile(DiscordMinecraftMultiClient.accountsFile);
+        DiscordMinecraftMultiClient.dm = new DiscordManager(DiscordMinecraftMultiClient.getDiscordToken());
 
-        CosmicAFKClient.multiClient.startClients();
+        DiscordMinecraftMultiClient.multiClient.startClients();
     }
 
     public static void shutdown() throws FileNotFoundException, InterruptedException {
-        CosmicAFKClient.multiClient.toFile(CosmicAFKClient.accountsFile);
-        CosmicAFKClient.saveWhitelist();
+        DiscordMinecraftMultiClient.multiClient.toFile(DiscordMinecraftMultiClient.accountsFile);
+        DiscordMinecraftMultiClient.saveWhitelist();
         LoginQueue.restarterThread.interrupt();
         Authenticator.sessionThread.interrupt();
         LoginQueue.restarterThread.join();
@@ -78,9 +78,9 @@ public class CosmicAFKClient {
     }
 
     private static String getDiscordToken() throws IOException {
-        if (CosmicAFKClient.tokenFile.createNewFile()) System.out.println("Creating token file");
+        if (DiscordMinecraftMultiClient.tokenFile.createNewFile()) System.out.println("Creating token file");
 
-        FileInputStream fileInputStream = new FileInputStream(CosmicAFKClient.tokenFile);
+        FileInputStream fileInputStream = new FileInputStream(DiscordMinecraftMultiClient.tokenFile);
         BufferedReader reader = new BufferedReader(new InputStreamReader(fileInputStream, StandardCharsets.UTF_8));
         String ret = reader.readLine();
 
@@ -90,15 +90,15 @@ public class CosmicAFKClient {
     }
 
     private static void saveWhitelist() throws FileNotFoundException {
-        FileOutputStream fileOutputStream = new FileOutputStream(CosmicAFKClient.whitelistFile);
+        FileOutputStream fileOutputStream = new FileOutputStream(DiscordMinecraftMultiClient.whitelistFile);
         BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(fileOutputStream, StandardCharsets.UTF_8));
 
         try {
-            for (String player : CosmicAFKClient.whitelisted) {
+            for (String player : DiscordMinecraftMultiClient.whitelisted) {
                 writer.write(player + '\n');
             }
         } catch (IOException e) {
-            CosmicAFKClient.log("Failed to write whitelist file");
+            DiscordMinecraftMultiClient.log("Failed to write whitelist file");
         } finally {
             try {
                 writer.close();
