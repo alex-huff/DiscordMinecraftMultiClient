@@ -354,6 +354,8 @@ public class McClient {
                     if (this.sysOut.get() % 2 == 0) DiscordMinecraftMultiClient.log(rawMessage);
 
                     if (rawMessage.contains("sleep")) return false;
+
+                    if (rawMessage.contains("respawn")) this.sendingQueue.put(new Packet(0x04, DataTypes.varIntBytes(0)));
                 }
 
                 case 0x1A -> {
