@@ -1,0 +1,34 @@
+plugins {
+    id 'java'
+    id 'com.github.johnrengelman.shadow' version '7.0.0'
+}
+
+group 'dev.phonis'
+version '1.0'
+
+repositories {
+    mavenCentral()
+    maven {
+        url 'https://litarvan.github.io/maven'
+    }
+    maven {
+        name 'm2-dv8tion'
+        url 'https://m2.dv8tion.net/releases'
+    }
+}
+
+dependencies {
+    implementation 'fr.litarvan:openauth:1.1.1'
+    implementation 'com.google.code.gson:gson:2.8.8'
+    implementation 'net.dv8tion:JDA:4.3.0_277'
+}
+
+shadowJar {
+    archiveBaseName.set('CosmicAFKClient')
+    archiveClassifier.set('')
+    archiveVersion.set('')
+
+    manifest {
+        attributes 'Main-Class': 'dev.phonis.cosmicafkclient.CosmicAFKClient'
+    }
+}
