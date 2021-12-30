@@ -353,7 +353,7 @@ public class McClient {
                     // if system output enabled
                     if (this.sysOut.get() % 2 == 0) DiscordMinecraftMultiClient.log(rawMessage);
 
-                    if (packet.inputStream.read() == 2 && rawMessage.contains("sleep")) return false;
+                    // if (packet.inputStream.read() == 2 && rawMessage.contains("sleep")) return false;
 
                     if (rawMessage.contains("respawn")) this.sendingQueue.put(new Packet(0x04, DataTypes.varIntBytes(0)));
                 }
