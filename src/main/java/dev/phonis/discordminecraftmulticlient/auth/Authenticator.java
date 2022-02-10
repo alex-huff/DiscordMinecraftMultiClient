@@ -65,20 +65,18 @@ public class Authenticator {
     private static SessionToken tryGetOrRefreshToken(SessionResolver sessionResolver) throws InterruptedException, AuthenticationException {
         SessionToken sessionToken;
 
-        if (sessionResolver.sessionToken == null) {
-            Authenticator.checkInterrupted();
+        Authenticator.checkInterrupted();
 
+        if (sessionResolver.sessionToken == null) {
             sessionToken = AuthUtil.authenticate(sessionResolver.username, sessionResolver.password);
         } else {
             try {
-                Authenticator.checkInterrupted();
-
                 sessionToken = AuthUtil.refresh(sessionResolver.sessionToken);
 
                 DiscordMinecraftMultiClient.log("Successfully refreshed session");
             } catch (AuthenticationException e) {
-                DiscordMinecraftMultiClient.log("Failed to refresh session, creating new one");
                 Authenticator.checkInterrupted();
+                DiscordMinecraftMultiClient.log("Failed to refresh session, creating new one");
 
                 sessionToken = AuthUtil.authenticate(sessionResolver.username, sessionResolver.password);
             }
