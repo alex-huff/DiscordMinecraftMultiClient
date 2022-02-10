@@ -73,7 +73,6 @@ public class Authenticator {
             try {
                 Authenticator.checkInterrupted();
 
-
                 sessionToken = AuthUtil.refresh(sessionResolver.sessionToken);
 
                 DiscordMinecraftMultiClient.log("Successfully refreshed session");
