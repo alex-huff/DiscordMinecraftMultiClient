@@ -17,7 +17,6 @@ import java.io.IOException;
 import java.net.SocketException;
 import java.security.*;
 import java.security.spec.InvalidKeySpecException;
-import java.security.spec.InvalidParameterSpecException;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CancellationException;
@@ -260,7 +259,7 @@ public class McClient
     private void connect() throws ExecutionException, InterruptedException, IOException, DataFormatException,
                                   InvalidAlgorithmParameterException, NoSuchPaddingException, IllegalBlockSizeException,
                                   NoSuchAlgorithmException, InvalidKeySpecException, BadPaddingException,
-                                  InvalidParameterSpecException, InvalidKeyException
+                                  InvalidKeyException
     {
         this.loginPhase   = true;
         this.sessionToken = (this.validSession) ? this.sessionToken
@@ -318,7 +317,7 @@ public class McClient
     private boolean login(SessionToken sessionToken)
         throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException,
                IllegalBlockSizeException, BadPaddingException, InvalidKeyException, InvalidAlgorithmParameterException,
-               InvalidParameterSpecException, DataFormatException, InterruptedException
+               DataFormatException, InterruptedException
     {
         byte[] protocolVersion = DataTypes.varIntBytes(757);
         byte[] serverPort      = DataTypes.uShortBytes(this.port);
