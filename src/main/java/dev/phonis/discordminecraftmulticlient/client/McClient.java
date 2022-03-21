@@ -188,8 +188,8 @@ public class McClient
             {
                 throw new InterruptedException();
             }
-            catch (SocketException e)
-            { // likely from shutdownSocket(), expected if McClient is stopped
+            catch (SocketException e) // likely from shutdownSocket(), expected if McClient is stopped
+            {
                 this.checkInterrupted();
             }
             catch (CancellationException e)
@@ -205,8 +205,9 @@ public class McClient
                 this.checkInterrupted();
             }
 
+            // if not shutting down, shutdown resources before restarting
             LockUtils.withLockInterruptable(
-                this.shutdownLock, // if not shutting down, shutdown resources before restarting
+                this.shutdownLock,
                 () ->
                 {
                     this.checkInterrupted();
@@ -319,17 +320,17 @@ public class McClient
                IllegalBlockSizeException, BadPaddingException, InvalidKeyException, InvalidAlgorithmParameterException,
                InvalidParameterSpecException, DataFormatException, InterruptedException
     {
-        byte[] protocol_version = DataTypes.varIntBytes(757);
-        byte[] server_port      = DataTypes.uShortBytes(this.port);
-        byte[] next_state       = DataTypes.varIntBytes(2);
-        byte[] handshake_packet = DataTypes.concatBytes(
-            protocol_version,
+        byte[] protocolVersion = DataTypes.varIntBytes(757);
+        byte[] serverPort      = DataTypes.uShortBytes(this.port);
+        byte[] nextState       = DataTypes.varIntBytes(2);
+        byte[] handshakePacket = DataTypes.concatBytes(
+            protocolVersion,
             DataTypes.stringBytes(this.serverIP),
-            server_port,
-            next_state
+            serverPort,
+            nextState
         );
 
-        socket.sendPacket(0x00, handshake_packet);
+        socket.sendPacket(0x00, handshakePacket);
 
         byte[] login_packet = DataTypes.stringBytes(sessionToken.playerName);
 
@@ -466,7 +467,7 @@ public class McClient
     private boolean initEncryption(String serverID, byte[] serverKey, byte[] token, SessionToken sessionToken)
         throws NoSuchAlgorithmException, InvalidKeySpecException, IOException, InvalidKeyException,
                NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException,
-               InvalidAlgorithmParameterException, InvalidParameterSpecException, DataFormatException,
+               InvalidAlgorithmParameterException, DataFormatException,
                InterruptedException
     {
         PublicKey    publicKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(serverKey));
