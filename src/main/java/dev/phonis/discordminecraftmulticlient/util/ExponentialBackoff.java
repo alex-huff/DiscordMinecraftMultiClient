@@ -1,8 +1,10 @@
 package dev.phonis.discordminecraftmulticlient.util;
 
-public interface ExponentialBackoff {
+public interface ExponentialBackoff
+{
 
-    default void backoff() throws InterruptedException {
+    default void backoff() throws InterruptedException
+    {
         this.waitUntilReady();
         this.onFailure();
     }
@@ -13,7 +15,8 @@ public interface ExponentialBackoff {
 
     long getWaitTime();
 
-    default void waitUntilReady() throws InterruptedException {
+    default void waitUntilReady() throws InterruptedException
+    {
         Thread.sleep(this.getWaitTime());
     }
 

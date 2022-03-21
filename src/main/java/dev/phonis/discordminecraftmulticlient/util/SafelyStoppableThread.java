@@ -4,22 +4,26 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Objects;
 
-public class SafelyStoppableThread extends Thread {
+public class SafelyStoppableThread extends Thread
+{
 
     /*
      It is assumed that task is designed to deterministically stop when interrupted in an
      acceptable amount of time
      */
-    public SafelyStoppableThread(Runnable task) {
+    public SafelyStoppableThread(Runnable task)
+    {
         super(task);
     }
 
     // ASSUMES THAT THE THREAD HAS ALREADY BEEN INTERRUPTED
-    public void waitForCompletion() throws InterruptedException {
+    public void waitForCompletion() throws InterruptedException
+    {
         this.join();
     }
 
-    public void safelyStop() throws InterruptedException {
+    public void safelyStop() throws InterruptedException
+    {
         this.interrupt();
         this.waitForCompletion();
     }
@@ -30,12 +34,15 @@ public class SafelyStoppableThread extends Thread {
     to complete, at least all the other threads were interrupted and can
     safely stop
      */
-    public static void stopAll(SafelyStoppableThread... threads) throws InterruptedException {
+    public static void stopAll(SafelyStoppableThread... threads) throws InterruptedException
+    {
         Arrays.stream(threads).sequential().filter(Objects::nonNull).forEach(Thread::interrupt);
 
-        Iterator<SafelyStoppableThread> threadIterator = Arrays.stream(threads).sequential().filter(Objects::nonNull).iterator();
+        Iterator<SafelyStoppableThread> threadIterator = Arrays.stream(threads).sequential().filter(Objects::nonNull)
+                                                               .iterator();
 
-        while (threadIterator.hasNext()) {
+        while (threadIterator.hasNext())
+        {
             threadIterator.next().waitForCompletion();
         }
     }

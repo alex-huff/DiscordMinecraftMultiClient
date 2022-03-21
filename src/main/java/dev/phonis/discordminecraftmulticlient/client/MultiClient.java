@@ -11,32 +11,40 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.function.Consumer;
 
-public class MultiClient {
+public class MultiClient
+{
 
-    private final List<McClient> clients = new ArrayList<>();
+    private final List<McClient>        clients   = new ArrayList<>();
     private final Map<String, McClient> clientMap = new TreeMap<>();
-    private final Object stateLock = new Object();
+    private final Object                stateLock = new Object();
 
-    public static MultiClient fromFile(File accountsFile) {
+    public static MultiClient fromFile(File accountsFile)
+    {
         MultiClient multiClient = new MultiClient();
 
-        try {
+        try
+        {
             if (accountsFile.createNewFile()) DiscordMinecraftMultiClient.log("Creating accounts file");
 
             FileInputStream fileInputStream = new FileInputStream(accountsFile);
-            BufferedReader reader = new BufferedReader(new InputStreamReader(fileInputStream, StandardCharsets.UTF_8));
-            String line;
+            BufferedReader  reader          = new BufferedReader(
+                new InputStreamReader(fileInputStream, StandardCharsets.UTF_8));
+            String          line;
 
-            while ((line = reader.readLine()) != null) {
+            while ((line = reader.readLine()) != null)
+            {
                 String[] params = line.split(" ");
 
                 if (params.length != 4) continue;
 
                 int port;
 
-                try {
+                try
+                {
                     port = Integer.parseInt(params[3]);
-                } catch (NumberFormatException e) {
+                }
+                catch (NumberFormatException e)
+                {
                     e.printStackTrace();
 
                     continue;
@@ -51,55 +59,77 @@ public class MultiClient {
             }
 
             reader.close();
-        } catch (IOException e) {
+        }
+        catch (IOException e)
+        {
             DiscordMinecraftMultiClient.log("Failed to read " + accountsFile.getName());
         }
 
         return multiClient;
     }
 
-    public void toFile(File accountsFile) throws FileNotFoundException {
+    public void toFile(File accountsFile) throws FileNotFoundException
+    {
         FileOutputStream fileOutputStream = new FileOutputStream(accountsFile);
-        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(fileOutputStream, StandardCharsets.UTF_8));
+        BufferedWriter   writer           = new BufferedWriter(
+            new OutputStreamWriter(fileOutputStream, StandardCharsets.UTF_8));
 
-        try {
-            synchronized (this.stateLock) {
-                for (McClient client : this.clients) {
-                    writer.write(client.username + " " + client.password + " " + client.serverIP + " " + client.port + '\n');
+        try
+        {
+            synchronized (this.stateLock)
+            {
+                for (McClient client : this.clients)
+                {
+                    writer.write(
+                        client.username + " " + client.password + " " + client.serverIP + " " + client.port + '\n');
                 }
             }
-        } catch (IOException e) {
+        }
+        catch (IOException e)
+        {
             DiscordMinecraftMultiClient.log("Failed to write accounts file");
-        } finally {
-            try {
+        }
+        finally
+        {
+            try
+            {
                 writer.close();
-            } catch (IOException e) {
+            }
+            catch (IOException e)
+            {
                 e.printStackTrace();
             }
         }
     }
 
-    private void addClient(String username, String password, String serverIP, int port) {
+    private void addClient(String username, String password, String serverIP, int port)
+    {
         McClient client = new McClient(username, password, serverIP, port, this::onNameChange);
 
-        synchronized (this.stateLock) {
+        synchronized (this.stateLock)
+        {
             this.clients.add(client);
         }
     }
 
-    public synchronized void addAndStartClient(String username, String password, String serverIP, int port) {
+    public synchronized void addAndStartClient(String username, String password, String serverIP, int port)
+    {
         McClient client = new McClient(username, password, serverIP, port, this::onNameChange);
 
-        synchronized (this.stateLock) {
+        synchronized (this.stateLock)
+        {
             this.clients.add(client);
         }
 
         client.startClient();
     }
 
-    private void onNameChange(McClient client, String to, String from) {
-        synchronized (this.stateLock) {
-            if (from != null) {
+    private void onNameChange(McClient client, String to, String from)
+    {
+        synchronized (this.stateLock)
+        {
+            if (from != null)
+            {
                 this.clientMap.remove(from);
             }
 
@@ -109,46 +139,56 @@ public class MultiClient {
         DiscordMinecraftMultiClient.log(client.username + "'s " + "name is: " + to);
     }
 
-    public synchronized void startClients() {
-        synchronized (this.stateLock) {
+    public synchronized void startClients()
+    {
+        synchronized (this.stateLock)
+        {
             this.clients.forEach(McClient::startClient);
         }
 
         DiscordMinecraftMultiClient.log("Started all clients");
     }
 
-    public synchronized void stopClients() throws InterruptedException {
+    public synchronized void stopClients() throws InterruptedException
+    {
         List<McClient> toStop;
 
-        synchronized (this.stateLock) {
+        synchronized (this.stateLock)
+        {
             toStop = new ArrayList<>(this.clients);
         }
 
-        for (McClient client : toStop) {
+        for (McClient client : toStop)
+        {
             client.stopClient();
         }
 
         DiscordMinecraftMultiClient.log("Stopped all clients");
     }
 
-    public synchronized void restartClients() throws InterruptedException {
+    public synchronized void restartClients() throws InterruptedException
+    {
         List<McClient> toRestart;
 
-        synchronized (this.stateLock) {
+        synchronized (this.stateLock)
+        {
             toRestart = new ArrayList<>(this.clients);
         }
 
-        for (McClient client : toRestart) {
+        for (McClient client : toRestart)
+        {
             client.restartClient();
         }
 
         DiscordMinecraftMultiClient.log("Restarted all clients");
     }
 
-    public synchronized boolean withClient(String name, Consumer<McClient> consumer) {
+    public synchronized boolean withClient(String name, Consumer<McClient> consumer)
+    {
         McClient client;
 
-        synchronized (this.stateLock) {
+        synchronized (this.stateLock)
+        {
             client = this.clientMap.get(name);
         }
 
@@ -159,10 +199,14 @@ public class MultiClient {
         return true;
     }
 
-    public synchronized <T extends Throwable> boolean withClientThrowable(String name, ThrowableConsumer<McClient, T> consumer) throws T {
+    public synchronized <T extends Throwable> boolean withClientThrowable(
+        String name, ThrowableConsumer<McClient, T> consumer
+    ) throws T
+    {
         McClient client;
 
-        synchronized (this.stateLock) {
+        synchronized (this.stateLock)
+        {
             client = this.clientMap.get(name);
         }
 
@@ -173,24 +217,30 @@ public class MultiClient {
         return true;
     }
 
-    public synchronized void forAllClients(Consumer<McClient> consumer) {
+    public synchronized void forAllClients(Consumer<McClient> consumer)
+    {
         List<McClient> toConsume;
 
-        synchronized (this.stateLock) {
+        synchronized (this.stateLock)
+        {
             toConsume = new ArrayList<>(this.clients);
         }
 
         toConsume.forEach(consumer);
     }
 
-    public synchronized <T extends Throwable> void forAllClientsThrowable(ThrowableConsumer<McClient, T> consumer) throws T {
+    public synchronized <T extends Throwable> void forAllClientsThrowable(ThrowableConsumer<McClient, T> consumer)
+        throws T
+    {
         List<McClient> toConsume;
 
-        synchronized (this.stateLock) {
+        synchronized (this.stateLock)
+        {
             toConsume = new ArrayList<>(this.clients);
         }
 
-        for (McClient client : toConsume) {
+        for (McClient client : toConsume)
+        {
             consumer.accept(client);
         }
     }

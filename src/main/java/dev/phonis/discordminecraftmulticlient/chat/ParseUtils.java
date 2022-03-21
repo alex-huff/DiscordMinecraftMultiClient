@@ -7,11 +7,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-public class ParseUtils {
+public class ParseUtils
+{
 
     private static final Map<String, String> translationRules = new TreeMap<>();
 
-    static {
+    static
+    {
         ParseUtils.translationRules.put("chat.type.admin", "[%s: %s]");
         ParseUtils.translationRules.put("chat.type.announcement", "§d[%s] %s");
         ParseUtils.translationRules.put("chat.type.emote", " * %s %s");
@@ -22,26 +24,36 @@ public class ParseUtils {
         ParseUtils.translationRules.put("commands.message.display.outgoing", "§7You whisper to %s: %s");
     }
 
-    public static String getRawMessage(String json) {
-        try {
+    public static String getRawMessage(String json)
+    {
+        try
+        {
             return ParseUtils.getRawString(JsonParser.parseString(json));
-        } catch (RuntimeException re) {
+        }
+        catch (RuntimeException re)
+        {
             re.printStackTrace();
         }
 
         return null;
     }
 
-    private static String translateString(String ruleName, List<String> usingData) {
-        if (ParseUtils.translationRules.containsKey(ruleName)) {
-            int usingIdx = 0;
-            String rule = ParseUtils.translationRules.get(ruleName);
-            StringBuilder result = new StringBuilder();
+    private static String translateString(String ruleName, List<String> usingData)
+    {
+        if (ParseUtils.translationRules.containsKey(ruleName))
+        {
+            int           usingIdx = 0;
+            String        rule     = ParseUtils.translationRules.get(ruleName);
+            StringBuilder result   = new StringBuilder();
 
-            for (int i = 0; i < rule.length(); i++) {
-                if (rule.charAt(i) == '%' && i + 1 < rule.length()) {
-                    if (rule.charAt(i + 1) == 's' || rule.charAt(i + 1) == 'd') {
-                        if (usingData.size() > usingIdx) {
+            for (int i = 0; i < rule.length(); i++)
+            {
+                if (rule.charAt(i) == '%' && i + 1 < rule.length())
+                {
+                    if (rule.charAt(i + 1) == 's' || rule.charAt(i + 1) == 'd')
+                    {
+                        if (usingData.size() > usingIdx)
+                        {
                             result.append(usingData.get(usingIdx));
 
                             usingIdx++;
@@ -49,12 +61,15 @@ public class ParseUtils {
 
                             continue;
                         }
-                    } else if (Character.isDigit(rule.charAt(i + 1))
-                        && i + 3 < rule.length() && rule.charAt(i + 2) == '$'
-                        && (rule.charAt(i + 3) == 's' || rule.charAt(i + 3) == 'd')) {
+                    }
+                    else if (Character.isDigit(rule.charAt(i + 1))
+                             && i + 3 < rule.length() && rule.charAt(i + 2) == '$'
+                             && (rule.charAt(i + 3) == 's' || rule.charAt(i + 3) == 'd'))
+                    {
                         int specifiedIdx = rule.charAt(i + 1) - '1';
 
-                        if (usingData.size() > specifiedIdx) {
+                        if (usingData.size() > specifiedIdx)
+                        {
                             result.append(usingData.get(specifiedIdx));
 
                             usingIdx++;
@@ -69,12 +84,15 @@ public class ParseUtils {
             }
 
             return result.toString();
-        } else {
+        }
+        else
+        {
             return "[" + ruleName + "] " + String.join(" ", usingData);
         }
     }
 
-    private static String getRawString(JsonElement chatElement) {
+    private static String getRawString(JsonElement chatElement)
+    {
         StringBuilder builder = new StringBuilder();
 
         ParseUtils.buildRawString(chatElement, builder);
@@ -82,8 +100,10 @@ public class ParseUtils {
         return builder.toString();
     }
 
-    private static void buildRawString(JsonElement chatElement, StringBuilder builder) {
-        if (chatElement.isJsonPrimitive()) {
+    private static void buildRawString(JsonElement chatElement, StringBuilder builder)
+    {
+        if (chatElement.isJsonPrimitive())
+        {
             JsonPrimitive primitive = chatElement.getAsJsonPrimitive();
 
             if (primitive.isString())
@@ -92,7 +112,8 @@ public class ParseUtils {
             return;
         }
 
-        if (chatElement.isJsonObject()) {
+        if (chatElement.isJsonObject())
+        {
             JsonObject object = chatElement.getAsJsonObject();
 
             if (object.has("text"))
@@ -101,12 +122,14 @@ public class ParseUtils {
             if (object.has("extra"))
                 ParseUtils.buildRawString(object.get("extra"), builder);
 
-            if (object.has("translate") && object.has("with")) {
+            if (object.has("translate") && object.has("with"))
+            {
                 List<String> usingData = new ArrayList<>();
 
                 JsonArray array = object.get("with").getAsJsonArray();
 
-                for (JsonElement element : array) {
+                for (JsonElement element : array)
+                {
                     StringBuilder stringBuilder = new StringBuilder();
 
                     ParseUtils.buildRawString(element, stringBuilder);
@@ -122,7 +145,8 @@ public class ParseUtils {
 
         JsonArray array = chatElement.getAsJsonArray();
 
-        for (JsonElement element : array) {
+        for (JsonElement element : array)
+        {
             ParseUtils.buildRawString(element, builder);
         }
     }

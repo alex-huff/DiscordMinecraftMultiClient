@@ -19,35 +19,45 @@ import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class DiscordManager extends ListenerAdapter {
+public class DiscordManager extends ListenerAdapter
+{
 
     private static List<GatewayIntent> intents;
 
-    static {
+    static
+    {
         DiscordManager.intents = new ArrayList<>();
 
         DiscordManager.intents.add(GatewayIntent.GUILD_MESSAGES);
     }
 
-    public JDA jda;
+    public  JDA            jda;
     private MessageChannel altChannel;
 
-    public DiscordManager(String token) throws InterruptedException {
-        while (true) {
-            try {
+    public DiscordManager(String token) throws InterruptedException
+    {
+        while (true)
+        {
+            try
+            {
                 this.login(token);
 
                 break;
-            } catch (Throwable e) {
+            }
+            catch (Throwable e)
+            {
                 Thread.sleep(5000);
             }
         }
     }
 
-    private void login(String token) throws InterruptedException, LoginException {
+    private void login(String token) throws InterruptedException, LoginException
+    {
         this.jda = JDABuilder.create(token, DiscordManager.intents).setActivity(
             EntityBuilder.createActivity(":)", null, Activity.ActivityType.DEFAULT)
-        ).disableCache(CacheFlag.ACTIVITY, CacheFlag.CLIENT_STATUS, CacheFlag.VOICE_STATE, CacheFlag.EMOTE, CacheFlag.ONLINE_STATUS).build();
+        ).disableCache(CacheFlag.ACTIVITY, CacheFlag.CLIENT_STATUS, CacheFlag.VOICE_STATE, CacheFlag.EMOTE,
+                       CacheFlag.ONLINE_STATUS
+        ).build();
 
         this.jda.awaitReady();
 
@@ -56,7 +66,10 @@ public class DiscordManager extends ListenerAdapter {
         this.jda.addEventListener(this);
     }
 
-    private static MessageEmbed embed(String title, String description, List<MessageEmbed.Field> fields, MessageEmbed.Thumbnail thumbnail) {
+    private static MessageEmbed embed(
+        String title, String description, List<MessageEmbed.Field> fields, MessageEmbed.Thumbnail thumbnail
+    )
+    {
         return new MessageEmbed(
             null,
             title,
@@ -78,43 +91,59 @@ public class DiscordManager extends ListenerAdapter {
         );
     }
 
-    private static MessageEmbed embed(String title, String description, List<MessageEmbed.Field> fields, String iconURL, int width, int height) {
-        return DiscordManager.embed(title, description, fields, new MessageEmbed.Thumbnail(iconURL, null, width, height));
+    private static MessageEmbed embed(
+        String title, String description, List<MessageEmbed.Field> fields, String iconURL, int width, int height
+    )
+    {
+        return DiscordManager.embed(
+            title, description, fields, new MessageEmbed.Thumbnail(iconURL, null, width, height));
     }
 
-    public void sendEmbed(String title, String message) {
+    public void sendEmbed(String title, String message)
+    {
         this.altChannel.sendMessage(DiscordManager.embed(title, message, null, null)).queue();
     }
 
-    public void sendPlayerEmbed(String player, String title, String message) {
-        this.altChannel.sendMessage(DiscordManager.embed(title, message, null, "https://mc-heads.net/body/" + player, 180, 432)).queue();
+    public void sendPlayerEmbed(String player, String title, String message)
+    {
+        this.altChannel
+            .sendMessage(DiscordManager.embed(title, message, null, "https://mc-heads.net/body/" + player, 180, 432))
+            .queue();
     }
 
-    public void sendMessage(String message) { //assume only in one guild, with one channel named alts
+    public void sendMessage(String message)
+    { //assume only in one guild, with one channel named alts
         this.altChannel.sendMessage(message).queue();
     }
 
     @Override
-    public void onMessageReceived(MessageReceivedEvent event) {
+    public void onMessageReceived(MessageReceivedEvent event)
+    {
         if (event.getAuthor().getIdLong() == this.jda.getSelfUser().getIdLong()) return;
 
         if (!event.getChannel().equals(this.altChannel)) return;
 
         String line = event.getMessage().getContentRaw();
 
-        try {
+        try
+        {
             this.handleCommand(line);
-        } catch (InterruptedException | FileNotFoundException e) {
+        }
+        catch (InterruptedException | FileNotFoundException e)
+        {
             e.printStackTrace();
         }
     }
 
-    private void handleCommand(String line) throws InterruptedException, FileNotFoundException {
+    private void handleCommand(String line) throws InterruptedException, FileNotFoundException
+    {
         String[] commandArgs = line.split(" ");
 
-        switch (commandArgs[0]) {
+        switch (commandArgs[0])
+        {
             case "whitelist" -> {
-                if (commandArgs.length < 2) {
+                if (commandArgs.length < 2)
+                {
                     this.sendMessage("Usage: whitelist (player)");
 
                     break;
@@ -125,7 +154,8 @@ public class DiscordManager extends ListenerAdapter {
             }
 
             case "showme" -> {
-                if (commandArgs.length < 2) {
+                if (commandArgs.length < 2)
+                {
                     this.sendMessage("Usage: showme (username)");
 
                     break;
@@ -133,15 +163,19 @@ public class DiscordManager extends ListenerAdapter {
 
                 String name = commandArgs[1];
 
-                if (DiscordMinecraftMultiClient.multiClient.withClient(name, McClient::toggleOut)) {
+                if (DiscordMinecraftMultiClient.multiClient.withClient(name, McClient::toggleOut))
+                {
                     this.sendPlayerEmbed(name, "Toggle output", "Toggling " + name + "'s output");
-                } else {
+                }
+                else
+                {
                     this.sendMessage("No client with this player name yet");
                 }
             }
 
             case "start" -> {
-                if (commandArgs.length < 2) {
+                if (commandArgs.length < 2)
+                {
                     this.sendMessage("Usage: start (username)");
 
                     break;
@@ -149,15 +183,19 @@ public class DiscordManager extends ListenerAdapter {
 
                 String name = commandArgs[1];
 
-                if (DiscordMinecraftMultiClient.multiClient.withClient(name, McClient::startClient)) {
+                if (DiscordMinecraftMultiClient.multiClient.withClient(name, McClient::startClient))
+                {
                     this.sendPlayerEmbed(name, "Starter", "Started " + name);
-                } else {
+                }
+                else
+                {
                     this.sendEmbed("Starter", "No client with this player name yet");
                 }
             }
 
             case "stop" -> {
-                if (commandArgs.length < 2) {
+                if (commandArgs.length < 2)
+                {
                     this.sendMessage("Usage: stop (username)");
 
                     break;
@@ -165,9 +203,12 @@ public class DiscordManager extends ListenerAdapter {
 
                 String name = commandArgs[1];
 
-                if (DiscordMinecraftMultiClient.multiClient.withClientThrowable(name, McClient::stopClient)) {
+                if (DiscordMinecraftMultiClient.multiClient.withClientThrowable(name, McClient::stopClient))
+                {
                     this.sendPlayerEmbed(name, "Stopper", "Stopped " + name);
-                } else {
+                }
+                else
+                {
                     this.sendEmbed("Stopper", "No client with this player name yet");
                 }
             }
@@ -189,31 +230,38 @@ public class DiscordManager extends ListenerAdapter {
             }
 
             case "send" -> {
-                if (commandArgs.length < 3) {
+                if (commandArgs.length < 3)
+                {
                     this.sendMessage("Usage: send (sender) (message)");
 
                     break;
                 }
 
-                String name = commandArgs[1];
+                String        name           = commandArgs[1];
                 StringBuilder messageBuilder = new StringBuilder();
 
-                for (int i = 2; i < commandArgs.length; i++) {
+                for (int i = 2; i < commandArgs.length; i++)
+                {
                     messageBuilder.append(commandArgs[i]);
                     if (i != commandArgs.length - 1) messageBuilder.append(' ');
                 }
 
                 String message = messageBuilder.toString();
 
-                if (DiscordMinecraftMultiClient.multiClient.withClientThrowable(name, client -> client.queueMessage(message))) {
+                if (DiscordMinecraftMultiClient.multiClient.withClientThrowable(
+                    name, client -> client.queueMessage(message)))
+                {
                     this.sendPlayerEmbed(name, "Sender", "Sending '" + message + "' as " + name);
-                } else {
+                }
+                else
+                {
                     this.sendMessage("No client with this player name yet");
                 }
             }
 
             case "sendall" -> {
-                if (commandArgs.length < 2) {
+                if (commandArgs.length < 2)
+                {
                     this.sendMessage("Usage: sendall (message)");
 
                     break;
@@ -221,7 +269,8 @@ public class DiscordManager extends ListenerAdapter {
 
                 StringBuilder messageBuilder = new StringBuilder();
 
-                for (int i = 1; i < commandArgs.length; i++) {
+                for (int i = 1; i < commandArgs.length; i++)
+                {
                     messageBuilder.append(commandArgs[i]);
                     if (i != commandArgs.length - 1) messageBuilder.append(' ');
                 }

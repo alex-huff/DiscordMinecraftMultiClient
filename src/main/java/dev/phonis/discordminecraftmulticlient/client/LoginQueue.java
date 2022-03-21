@@ -6,16 +6,22 @@ import dev.phonis.discordminecraftmulticlient.util.Waiter;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-public class LoginQueue {
+public class LoginQueue
+{
 
-    private static final BlockingQueue<Waiter> loginQueue = new LinkedBlockingQueue<>();
-    public static final Thread restarterThread = new Thread(
-        () -> {
-            while (!Thread.currentThread().isInterrupted()) {
-                try {
+    private static final BlockingQueue<Waiter> loginQueue      = new LinkedBlockingQueue<>();
+    public static final  Thread                restarterThread = new Thread(
+        () ->
+        {
+            while (!Thread.currentThread().isInterrupted())
+            {
+                try
+                {
                     LoginQueue.loginQueue.take().wake();
                     Thread.sleep(10000);
-                } catch (InterruptedException e) {
+                }
+                catch (InterruptedException e)
+                {
                     break;
                 }
             }
@@ -24,11 +30,13 @@ public class LoginQueue {
         }
     );
 
-    static {
+    static
+    {
         LoginQueue.restarterThread.start();
     }
 
-    public static void waitForTurn() throws InterruptedException {
+    public static void waitForTurn() throws InterruptedException
+    {
         Waiter waiter = new Waiter();
 
         LoginQueue.loginQueue.put(waiter);
