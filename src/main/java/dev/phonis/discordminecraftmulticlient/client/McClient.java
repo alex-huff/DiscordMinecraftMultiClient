@@ -177,7 +177,9 @@ public class McClient
 
     private void mainLoop() throws InterruptedException
     {
-        while (!Thread.currentThread().isInterrupted())
+        boolean shouldRetry = true;
+
+        while (!Thread.currentThread().isInterrupted() && shouldRetry)
         {
             try
             {
@@ -187,24 +189,20 @@ public class McClient
             {
                 throw new InterruptedException();
             }
-            catch (SocketException e) // likely from shutdownSocket(), expected if McClient is stopped
+            catch (SocketException ignored) // likely from shutdownSocket(), expected if McClient is stopped
             {
-                this.checkInterrupted();
             }
             catch (CancellationException e)
             {
                 e.printStackTrace();
-                this.shutdown();
-
-                return;
+                shouldRetry = false;
             }
             catch (Throwable e)
             {
                 e.printStackTrace();
-                this.checkInterrupted();
             }
 
-            // if not shutting down, shutdown resources before restarting
+            // throw error if interrupted, else shutdown resources before restarting
             LockUtils.withLockInterruptable(
                 this.shutdownLock,
                 () ->
@@ -220,40 +218,27 @@ public class McClient
     private void shutdown() throws InterruptedException
     {
         SafelyStoppableThread.stopAll(this.senderThread);
-        this.sendingQueue.clear();
         this.shutdownSocket();
     }
 
     private void checkInterrupted() throws InterruptedException
     {
-        LockUtils.withLockInterruptable(
-            this.shutdownLock,
-            () ->
-            {
-                if (Thread.currentThread().isInterrupted())
-                {
-                    throw new InterruptedException();
-                }
-            }
-        );
+        if (Thread.currentThread().isInterrupted())
+        {
+            throw new InterruptedException();
+        }
     }
 
     private void shutdownSocket()
     {
-        LockUtils.withLock(
-            this.shutdownLock,
-            () ->
-            {
-                try
-                {
-                    if (this.socket != null && !this.socket.isClosed()) this.socket.close();
-                }
-                catch (IOException e)
-                {
-                    e.printStackTrace();
-                }
-            }
-        );
+        try
+        {
+            if (this.socket != null && !this.socket.isClosed()) this.socket.close();
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+        }
     }
 
     private void connect() throws ExecutionException, InterruptedException, IOException, DataFormatException,
@@ -455,7 +440,8 @@ public class McClient
                 }
 
                 default -> {
-                    // Main.log("Unknown packet of ID: " + new BigInteger(String.valueOf(packet.id)).toString(16));
+//                    DiscordMinecraftMultiClient.log(
+//                        "Unknown packet of ID: " + new BigInteger(String.valueOf(packet.id)).toString(16));
                 }
             }
         }
