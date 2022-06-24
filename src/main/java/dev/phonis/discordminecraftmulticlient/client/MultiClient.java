@@ -37,6 +37,7 @@ class MultiClient
 
 			while ((line = reader.readLine()) != null)
 			{
+				if (line.startsWith("#")) continue;
 				String[] params = line.split(" ");
 
                 if (params.length != 4)
