@@ -1,11 +1,8 @@
 package dev.phonis.discordminecraftmulticlient.auth;
 
-import fr.litarvan.openauth.AuthPoints;
-import fr.litarvan.openauth.AuthenticationException;
-import fr.litarvan.openauth.Authenticator;
-import fr.litarvan.openauth.model.AuthAgent;
-import fr.litarvan.openauth.model.response.AuthResponse;
-import fr.litarvan.openauth.model.response.RefreshResponse;
+import fr.litarvan.openauth.microsoft.MicrosoftAuthResult;
+import fr.litarvan.openauth.microsoft.MicrosoftAuthenticationException;
+import fr.litarvan.openauth.microsoft.MicrosoftAuthenticator;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -17,75 +14,79 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-public class AuthUtil
+public
+class AuthUtil
 {
 
-    private static final Authenticator authenticator = new Authenticator(
-        Authenticator.MOJANG_AUTH_URL, AuthPoints.NORMAL_AUTH_POINTS);
+	private static final MicrosoftAuthenticator authenticator = new MicrosoftAuthenticator();
 
-    public static SessionToken authenticate(String username, String password) throws AuthenticationException
-    {
-        SessionToken token        = new SessionToken();
-        AuthResponse authResponse = AuthUtil.authenticator.authenticate(
-            AuthAgent.MINECRAFT, username, password, token.clientID);
-        token.id         = authResponse.getAccessToken();
-        token.playerName = authResponse.getSelectedProfile().getName();
-        token.playerID   = authResponse.getSelectedProfile().getId();
+	public static
+	SessionToken authenticate(String username, String password) throws MicrosoftAuthenticationException
+	{
+		SessionToken        token        = new SessionToken();
+		MicrosoftAuthResult authResponse = AuthUtil.authenticator.loginWithCredentials(username, password);
+		token.id           = authResponse.getAccessToken();
+		token.playerName   = authResponse.getProfile().getName();
+		token.playerID     = authResponse.getProfile().getId();
+		token.refreshToken = authResponse.getRefreshToken();
 
-        return token;
-    }
+		return token;
+	}
 
-    public static SessionToken refresh(SessionToken sessionToken) throws AuthenticationException
-    {
-        SessionToken    token           = new SessionToken();
-        RefreshResponse refreshResponse = AuthUtil.authenticator.refresh(sessionToken.id, sessionToken.clientID);
-        token.id         = refreshResponse.getAccessToken();
-        token.playerName = refreshResponse.getSelectedProfile().getName();
-        token.playerID   = refreshResponse.getSelectedProfile().getId();
+	public static
+	SessionToken refresh(SessionToken sessionToken) throws MicrosoftAuthenticationException
+	{
+		SessionToken        newToken        = new SessionToken();
+		MicrosoftAuthResult refreshResponse = AuthUtil.authenticator.loginWithRefreshToken(sessionToken.refreshToken);
+		newToken.id           = refreshResponse.getAccessToken();
+		newToken.playerName   = refreshResponse.getProfile().getName();
+		newToken.playerID     = refreshResponse.getProfile().getId();
+		newToken.refreshToken = refreshResponse.getRefreshToken();
 
-        return token;
-    }
+		return newToken;
+	}
 
-    public static String getServerHash(String serverID, byte[] publicKey, byte[] secretKey)
-        throws NoSuchAlgorithmException
-    {
-        MessageDigest md = MessageDigest.getInstance("SHA-1");
+	public static
+	String getServerHash(String serverID, byte[] publicKey, byte[] secretKey) throws NoSuchAlgorithmException
+	{
+		MessageDigest md = MessageDigest.getInstance("SHA-1");
 
-        md.update(serverID.getBytes(StandardCharsets.ISO_8859_1));
-        md.update(secretKey);
-        md.update(publicKey);
+		md.update(serverID.getBytes(StandardCharsets.ISO_8859_1));
+		md.update(secretKey);
+		md.update(publicKey);
 
-        return new BigInteger(md.digest()).toString(16);
-    }
+		return new BigInteger(md.digest()).toString(16);
+	}
 
-    public static boolean sessionCheck(String serverHash, String uuid, String accessToken) throws IOException
-    {
-        URL               url           = new URL("https://sessionserver.mojang.com/session/minecraft/join");
-        URLConnection     urlConnection = url.openConnection();
-        HttpURLConnection http          = (HttpURLConnection) urlConnection;
+	public static
+	boolean sessionCheck(String serverHash, String uuid, String accessToken) throws IOException
+	{
+		URL               url           = new URL("https://sessionserver.mojang.com/session/minecraft/join");
+		URLConnection     urlConnection = url.openConnection();
+		HttpURLConnection http          = (HttpURLConnection) urlConnection;
 
-        http.setRequestMethod("POST");
-        http.setDoOutput(true);
+		http.setRequestMethod("POST");
+		http.setDoOutput(true);
 
-        String jsonRequest      = "{\"accessToken\":\"" + accessToken + "\",\"selectedProfile\":\"" + uuid +
-                                  "\",\"serverId\":\"" + serverHash + "\"}";
-        byte[] jsonRequestBytes = jsonRequest.getBytes(StandardCharsets.UTF_8);
-        int    length           = jsonRequestBytes.length;
+		String jsonRequest = "{\"accessToken\":\"" + accessToken + "\",\"selectedProfile\":\"" + uuid +
+							 "\",\"serverId\":\"" + serverHash + "\"}";
+		byte[] jsonRequestBytes = jsonRequest.getBytes(StandardCharsets.UTF_8);
+		int    length           = jsonRequestBytes.length;
 
-        http.setFixedLengthStreamingMode(length);
-        http.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
-        http.connect();
+		http.setFixedLengthStreamingMode(length);
+		http.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
+		http.connect();
 
-        try (OutputStream outputStream = http.getOutputStream())
-        {
-            outputStream.write(jsonRequestBytes);
-        }
+		try (OutputStream outputStream = http.getOutputStream())
+		{
+			outputStream.write(jsonRequestBytes);
+		}
 
-        int code = http.getResponseCode();
+		int code = http.getResponseCode();
 
-        http.disconnect();
+		http.disconnect();
 
-        return code == 204;
-    }
+		return code == 204;
+	}
 
 }

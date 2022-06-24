@@ -27,72 +27,73 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.zip.DataFormatException;
 
-public class McClient
+public
+class McClient
 {
 
-    public final  String                username;
-    public final  String                password;
-    public final  String                serverIP;
-    public final  int                   port;
-    private       boolean               validSession  = false;
-    // used for atomic boolean toggle, sysOut%2 determining the boolean value
-    private final AtomicLong            sysOut        = new AtomicLong(1);
-    private final NameChangeHandler     nameChangeHandler;
-    private       McSocket              socket;
-    private       boolean               loginPhase;
-    private       SafelyStoppableThread mainThread;
-    private       SafelyStoppableThread senderThread;
-    private final BlockingQueue<Packet> sendingQueue  = new LinkedBlockingQueue<>();
-    private       SessionToken          sessionToken;
-    private       String                playerName;
-    private final ReentrantLock         nameLock      = new ReentrantLock();
-    private final Condition             nameReady     = this.nameLock.newCondition();
-    // prevents race conditions during the shutdown process
-    private final ReentrantLock         shutdownLock  = new ReentrantLock();
-    // prevents starting/stopping at same time
-    private final ReentrantLock         startStopLock = new ReentrantLock();
+	public final  String                username;
+	public final  String                password;
+	public final  String                serverIP;
+	public final  int                   port;
+	private       boolean               validSession  = false;
+	// used for atomic boolean toggle, sysOut%2 determining the boolean value
+	private final AtomicLong            sysOut        = new AtomicLong(1);
+	private final NameChangeHandler     nameChangeHandler;
+	private       McSocket              socket;
+	private       boolean               loginPhase;
+	private       SafelyStoppableThread mainThread;
+	private       SafelyStoppableThread senderThread;
+	private final BlockingQueue<Packet> sendingQueue  = new LinkedBlockingQueue<>();
+	private       SessionToken          sessionToken;
+	private       String                playerName;
+	private final ReentrantLock         nameLock      = new ReentrantLock();
+	private final Condition             nameReady     = this.nameLock.newCondition();
+	// prevents race conditions during the shutdown process
+	private final ReentrantLock         shutdownLock  = new ReentrantLock();
+	// prevents starting/stopping at same time
+	private final ReentrantLock         startStopLock = new ReentrantLock();
 
-    public McClient(String username, String password, String serverIP, int port, NameChangeHandler nameChangeHandler)
-    {
-        this.username          = username;
-        this.password          = password;
-        this.serverIP          = serverIP;
-        this.port              = port;
-        this.nameChangeHandler = nameChangeHandler;
-    }
+	public
+	McClient(String username, String password, String serverIP, int port, NameChangeHandler nameChangeHandler)
+	{
+		this.username          = username;
+		this.password          = password;
+		this.serverIP          = serverIP;
+		this.port              = port;
+		this.nameChangeHandler = nameChangeHandler;
+	}
 
-    public void toggleOut()
-    {
-        this.sysOut.incrementAndGet();
-    }
+	public
+	void toggleOut()
+	{
+		this.sysOut.incrementAndGet();
+	}
 
-    public String getPlayerName() throws InterruptedException
-    {
-        return LockUtils.getWithLockInterruptable(
-            this.nameLock,
-            () ->
-            {
-                while (this.playerName == null)
-                {
-                    this.nameReady.await();
-                }
+	public
+	String getPlayerName() throws InterruptedException
+	{
+		return LockUtils.getWithLockInterruptable(this.nameLock, () ->
+		{
+			while (this.playerName == null)
+			{
+				this.nameReady.await();
+			}
 
-                return this.playerName;
-            }
-        );
-    }
+			return this.playerName;
+		});
+	}
 
-    public void queueMessage(String message) throws InterruptedException
-    {
-        this.sendingQueue.put(new Packet(0x03, DataTypes.stringBytes(message)));
-    }
+	public
+	void queueMessage(String message) throws InterruptedException
+	{
+		this.sendingQueue.put(new Packet(0x03, DataTypes.stringBytes(message)));
+	}
 
-    public void restartClient() throws InterruptedException
-    {
-        LockUtils.withLockInterruptable(
-            this.startStopLock,
-            () ->
-            {
+	public
+	void restartClient() throws InterruptedException
+	{
+		LockUtils.withLockInterruptable(this.startStopLock, () ->
+		{
                 /*
                 stopClient joins with previous main thread, establishing happens-before relationship,
                 meaning whatever internal state modified by the previous main thread, IE sessionToken,
@@ -109,27 +110,25 @@ public class McClient
                 the McClient, it will happen inherently by control of the client being restricted to the
                 stopClient, startClient, and restartClient methods.
                  */
-                this.stopClient();
-                this.startClient();
-            }
-        );
-    }
+			this.stopClient();
+			this.startClient();
+		});
+	}
 
-    public void startClient()
-    {
-        LockUtils.withLock(
-            this.startStopLock,
-            () ->
-            {
-                this.mainThread = new SafelyStoppableThread(this::start);
+	public
+	void startClient()
+	{
+		LockUtils.withLock(this.startStopLock, () ->
+		{
+			this.mainThread = new SafelyStoppableThread(this::start);
 
-                this.mainThread.start();
-            }
-        );
-    }
+			this.mainThread.start();
+		});
+	}
 
-    public void stopClient() throws InterruptedException
-    {
+	public
+	void stopClient() throws InterruptedException
+	{
         /*
         Thread Closing
             ----shutdownSocket() ----------------> mainThread.interrupt()
@@ -143,132 +142,133 @@ public class McClient
         To fix this, we need to lock the creation/closing of the socket and the setting/getting
         of the interrupted flag, before continuing with the creation of the socket.
         */
-        LockUtils.withLockInterruptable(
-            this.startStopLock,
-            () ->
-            {
-                if (this.mainThread == null) return; // client has not been started yet
+		LockUtils.withLockInterruptable(this.startStopLock, () ->
+		{
+			if (this.mainThread == null)
+			{
+				return; // client has not been started yet
+			}
 
-                LockUtils.withLockInterruptable(
-                    this.shutdownLock,
-                    () ->
-                    {
-                        this.shutdown();
-                        this.mainThread.interrupt();
-                    }
-                );
+			LockUtils.withLockInterruptable(this.shutdownLock, () ->
+			{
+				this.shutdown();
+				this.mainThread.interrupt();
+			});
 
-                this.mainThread.waitForCompletion();
-            }
-        );
-    }
+			this.mainThread.waitForCompletion();
+		});
+	}
 
-    // should only return if thread is interrupted
-    private void start()
-    {
-        try
-        {
-            this.mainLoop();
-        }
-        catch (InterruptedException ignored)
-        {
-        }
-    }
+	// should only return if thread is interrupted
+	private
+	void start()
+	{
+		try
+		{
+			this.mainLoop();
+		}
+		catch (InterruptedException ignored)
+		{
+		}
+	}
 
-    private void mainLoop() throws InterruptedException
-    {
-        boolean shouldRetry = true;
+	private
+	void mainLoop() throws InterruptedException
+	{
+		boolean shouldRetry = true;
 
-        while (!Thread.currentThread().isInterrupted() && shouldRetry)
-        {
-            try
-            {
-                this.connect();
-            }
-            catch (InterruptedException ignored)
-            {
-                throw new InterruptedException();
-            }
-            catch (SocketException ignored) // likely from shutdownSocket(), expected if McClient is stopped
-            {
-            }
-            catch (CancellationException e)
-            {
-                e.printStackTrace();
-                shouldRetry = false;
-            }
-            catch (Throwable e)
-            {
-                e.printStackTrace();
-            }
+		while (!Thread.currentThread().isInterrupted() && shouldRetry)
+		{
+			try
+			{
+				this.connect();
+			}
+			catch (InterruptedException ignored)
+			{
+				throw new InterruptedException();
+			}
+			catch (SocketException ignored) // likely from shutdownSocket(), expected if McClient is stopped
+			{
+			}
+			catch (CancellationException e)
+			{
+				e.printStackTrace();
+				shouldRetry = false;
+			}
+			catch (Throwable e)
+			{
+				e.printStackTrace();
+			}
 
-            // throw error if interrupted, else shutdown resources before restarting
-            LockUtils.withLockInterruptable(
-                this.shutdownLock,
-                () ->
-                {
-                    this.checkInterrupted();
-                    this.shutdown();
-                }
-            );
-            Thread.sleep(10000);
-        }
-    }
+			// throw error if interrupted, else shutdown resources before restarting
+			LockUtils.withLockInterruptable(this.shutdownLock, () ->
+			{
+				this.checkInterrupted();
+				this.shutdown();
+			});
+			Thread.sleep(10000);
+		}
+	}
 
-    private void shutdown() throws InterruptedException
-    {
-        SafelyStoppableThread.stopAll(this.senderThread);
-        this.shutdownSocket();
-    }
+	private
+	void shutdown() throws InterruptedException
+	{
+		SafelyStoppableThread.stopAll(this.senderThread);
+		this.shutdownSocket();
+	}
 
-    private void checkInterrupted() throws InterruptedException
-    {
-        if (Thread.currentThread().isInterrupted())
-        {
-            throw new InterruptedException();
-        }
-    }
+	private
+	void checkInterrupted() throws InterruptedException
+	{
+		if (Thread.currentThread().isInterrupted())
+		{
+			throw new InterruptedException();
+		}
+	}
 
-    private void shutdownSocket()
-    {
-        try
-        {
-            if (this.socket != null && !this.socket.isClosed()) this.socket.close();
-        }
-        catch (IOException e)
-        {
-            e.printStackTrace();
-        }
-    }
+	private
+	void shutdownSocket()
+	{
+		try
+		{
+			if (this.socket != null && !this.socket.isClosed())
+			{
+				this.socket.close();
+			}
+		}
+		catch (IOException e)
+		{
+			e.printStackTrace();
+		}
+	}
 
-    private void connect() throws ExecutionException, InterruptedException, IOException, DataFormatException,
-                                  InvalidAlgorithmParameterException, NoSuchPaddingException, IllegalBlockSizeException,
-                                  NoSuchAlgorithmException, InvalidKeySpecException, BadPaddingException,
-                                  InvalidKeyException
-    {
-        this.loginPhase   = true;
-        this.sessionToken = (this.validSession) ? this.sessionToken
-                                                : Authenticator.getOrRefreshSession(this.sessionToken, this.username,
-                                                                                    this.password
-                                                );
-        String old = this.playerName;
+	private
+	void connect() throws ExecutionException, InterruptedException, IOException, DataFormatException,
+						  InvalidAlgorithmParameterException, NoSuchPaddingException, IllegalBlockSizeException,
+						  NoSuchAlgorithmException, InvalidKeySpecException, BadPaddingException, InvalidKeyException
+	{
+		this.loginPhase   = true;
+		this.sessionToken = (this.validSession) ? this.sessionToken
+												: Authenticator.getOrRefreshSession(this.sessionToken, this.username,
+																					this.password
+												);
+		String old = this.playerName;
 
-        // let everyone know who is waiting on what this client's player name is
-        LockUtils.withLock(
-            this.nameLock,
-            () ->
-            {
-                this.playerName = this.sessionToken.playerName;
+		// let everyone know who is waiting on what this client's player name is
+		LockUtils.withLock(this.nameLock, () ->
+		{
+			this.playerName = this.sessionToken.playerName;
 
-                this.nameReady.signalAll();
-            }
-        );
-        if ((old == null || !old.equals(this.playerName)) &&
-            this.playerName != null) this.nameChangeHandler.onNameChange(this, this.playerName, old);
+			this.nameReady.signalAll();
+		});
+		if ((old == null || !old.equals(this.playerName)) && this.playerName != null)
+		{
+			this.nameChangeHandler.onNameChange(this, this.playerName, old);
+		}
 
-        DiscordMinecraftMultiClient.embedWithPlayer(
-            this.sessionToken.playerName, "Auth", "Logged in as: " + this.sessionToken.playerName);
-        LoginQueue.waitForTurn(); // avoid connection throttled
+		DiscordMinecraftMultiClient.embedWithPlayer(
+			this.sessionToken.playerName, "Auth", "Logged in as: " + this.sessionToken.playerName);
+		LoginQueue.waitForTurn(); // avoid connection throttled
         /*
         Thread Closing
             ----shutdownSocket() ----------------> mainThread.interrupt()
@@ -282,243 +282,258 @@ public class McClient
         To fix this, we need to lock the creation/closing of the socket and the setting/getting
         of the interrupted flag, before continuing with the creation of the socket.
         */
-        LockUtils.withLockInterruptableIO(
-            this.shutdownLock,
-            () ->
-            {
-                this.checkInterrupted();
+		LockUtils.withLockInterruptableIO(this.shutdownLock, () ->
+		{
+			this.checkInterrupted();
 
-                this.socket = new McSocket(this.serverIP, this.port);
-            }
-        );
+			this.socket = new McSocket(this.serverIP, this.port);
+		});
 
-        if (!this.login(this.sessionToken)) return;
+		if (!this.login(this.sessionToken))
+		{
+			return;
+		}
 
-        while (this.handlePacket(socket.readPacket()))
-        {
-        }
-    }
+		while (this.handlePacket(socket.readPacket()))
+		{
+		}
+	}
 
-    private boolean login(SessionToken sessionToken)
-        throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException,
-               IllegalBlockSizeException, BadPaddingException, InvalidKeyException, InvalidAlgorithmParameterException,
-               DataFormatException, InterruptedException
-    {
-        byte[] protocolVersion = DataTypes.varIntBytes(757);
-        byte[] serverPort      = DataTypes.uShortBytes(this.port);
-        byte[] nextState       = DataTypes.varIntBytes(2);
-        byte[] handshakePacket = DataTypes.concatBytes(
-            protocolVersion,
-            DataTypes.stringBytes(this.serverIP),
-            serverPort,
-            nextState
-        );
+	private
+	boolean login(SessionToken sessionToken)
+		throws IOException, NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException,
+			   IllegalBlockSizeException, BadPaddingException, InvalidKeyException, InvalidAlgorithmParameterException,
+			   DataFormatException, InterruptedException
+	{
+		byte[] protocolVersion = DataTypes.varIntBytes(757);
+		byte[] serverPort      = DataTypes.uShortBytes(this.port);
+		byte[] nextState       = DataTypes.varIntBytes(2);
+		byte[] handshakePacket = DataTypes.concatBytes(protocolVersion, DataTypes.stringBytes(this.serverIP),
+													   serverPort, nextState
+		);
 
-        socket.sendPacket(0x00, handshakePacket);
+		socket.sendPacket(0x00, handshakePacket);
 
-        byte[] login_packet = DataTypes.stringBytes(sessionToken.playerName);
+		byte[] login_packet = DataTypes.stringBytes(sessionToken.playerName);
 
-        socket.sendPacket(0x00, login_packet);
+		socket.sendPacket(0x00, login_packet);
 
-        while (true)
-        {
-            Packet packet = socket.readPacket();
+		while (true)
+		{
+			Packet packet = socket.readPacket();
 
-            switch (packet.id)
-            {
-                case 0x00 -> {
-                    DiscordMinecraftMultiClient.log(
-                        "Login rejected " + this.playerName + ": " + DataTypes.getString(packet.inputStream));
+			switch (packet.id)
+			{
+				case 0x00 ->
+				{
+					DiscordMinecraftMultiClient.log(
+						"Login rejected " + this.playerName + ": " + DataTypes.getString(packet.inputStream));
 
-                    return false;
-                }
+					return false;
+				}
 
-                case 0x01 -> {
-                    String serverID  = DataTypes.getString(packet.inputStream);
-                    byte[] serverKey = DataTypes.getByteArray(packet.inputStream);
-                    byte[] token     = DataTypes.getByteArray(packet.inputStream);
+				case 0x01 ->
+				{
+					String serverID  = DataTypes.getString(packet.inputStream);
+					byte[] serverKey = DataTypes.getByteArray(packet.inputStream);
+					byte[] token     = DataTypes.getByteArray(packet.inputStream);
 
-                    return this.initEncryption(serverID, serverKey, token, sessionToken);
-                }
+					return this.initEncryption(serverID, serverKey, token, sessionToken);
+				}
 
-                case 0x02 -> {
-                    DiscordMinecraftMultiClient.log("Login successful " + this.playerName);
+				case 0x02 ->
+				{
+					DiscordMinecraftMultiClient.log("Login successful " + this.playerName);
 
-                    this.loginPhase = false;
+					this.loginPhase = false;
 
-                    return true;
-                }
+					return true;
+				}
 
-                default -> this.handlePacket(packet);
-            }
-        }
-    }
+				default -> this.handlePacket(packet);
+			}
+		}
+	}
 
-    private void startSenderThread() throws InterruptedException
-    {
-        LockUtils.withLockInterruptable(
-            this.shutdownLock, // don't start sender thread while client shutting down
-            () ->
-            {
-                this.checkInterrupted();
-                this.sendingQueue.clear();
+	private
+	void startSenderThread() throws InterruptedException
+	{
+		LockUtils.withLockInterruptable(
+			this.shutdownLock, // don't start sender thread while client shutting down
+			() ->
+			{
+				this.checkInterrupted();
+				this.sendingQueue.clear();
 
-                this.senderThread = new SafelyStoppableThread(
-                    () ->
-                    {
-                        while (!Thread.currentThread().isInterrupted())
-                        {
-                            try
-                            {
-                                Packet sendPacket = this.sendingQueue.take();
+				this.senderThread = new SafelyStoppableThread(() ->
+															  {
+																  while (!Thread.currentThread().isInterrupted())
+																  {
+																	  try
+																	  {
+																		  Packet sendPacket = this.sendingQueue.take();
 
-                                if (!Thread.currentThread().isInterrupted())
-                                    this.socket.sendPacket(sendPacket);
-                            }
-                            catch (IOException e)
-                            {
-                                e.printStackTrace();
-                            }
-                            catch (InterruptedException e)
-                            {
-                                break;
-                            }
-                        }
-                    }
-                );
+																		  if (!Thread.currentThread().isInterrupted())
+																		  {
+																			  this.socket.sendPacket(sendPacket);
+																		  }
+																	  }
+																	  catch (IOException e)
+																	  {
+																		  e.printStackTrace();
+																	  }
+																	  catch (InterruptedException e)
+																	  {
+																		  break;
+																	  }
+																  }
+															  });
 
-                this.senderThread.start();
-            }
-        );
-    }
+				this.senderThread.start();
+			}
+		);
+	}
 
-    private boolean handlePacket(Packet packet) throws IOException, InterruptedException
-    {
-        if (this.loginPhase)
-        {
-            switch (packet.id)
-            {
-                case 0x03 -> this.socket.setCompressionThreshold(DataTypes.getVarInt(packet.inputStream));
+	private
+	boolean handlePacket(Packet packet) throws IOException, InterruptedException
+	{
+		if (this.loginPhase)
+		{
+			switch (packet.id)
+			{
+				case 0x03 -> this.socket.setCompressionThreshold(DataTypes.getVarInt(packet.inputStream));
 
-                case 0x04 -> {
-                    int messageID = DataTypes.getVarInt(packet.inputStream);
+				case 0x04 ->
+				{
+					int messageID = DataTypes.getVarInt(packet.inputStream);
 
-                    this.socket.sendPacket(
-                        0x02, DataTypes.concatBytes(DataTypes.varIntBytes(messageID), DataTypes.booleanBytes(false)));
-                }
+					this.socket.sendPacket(
+						0x02, DataTypes.concatBytes(DataTypes.varIntBytes(messageID), DataTypes.booleanBytes(false)));
+				}
 
-                default -> DiscordMinecraftMultiClient.log("Unknown packet of ID: " + packet.id);
-            }
-        }
-        else
-        {
-            switch (packet.id)
-            {
-                case 0x21 -> this.sendingQueue.put(new Packet(0x0F, packet.inputStream.readAllBytes()));
+				default -> DiscordMinecraftMultiClient.log("Unknown packet of ID: " + packet.id);
+			}
+		}
+		else
+		{
+			switch (packet.id)
+			{
+				case 0x21 -> this.sendingQueue.put(new Packet(0x0F, packet.inputStream.readAllBytes()));
 
-                case 0x26 -> this.startSenderThread();
+				case 0x26 -> this.startSenderThread();
 
-                case 0x0F -> {
-                    String rawJson    = DataTypes.getString(packet.inputStream);
-                    String rawMessage = ParseUtils.getRawMessage(rawJson);
+				case 0x0F ->
+				{
+					String rawJson    = DataTypes.getString(packet.inputStream);
+					String rawMessage = ParseUtils.getRawMessage(rawJson);
 
-                    if (rawMessage == null) break;
+					if (rawMessage == null)
+					{
+						break;
+					}
 
-                    // if system output enabled
-                    if (this.sysOut.get() % 2 == 0) DiscordMinecraftMultiClient.log(rawMessage);
+					// if system output enabled
+					if (this.sysOut.get() % 2 == 0)
+					{
+						DiscordMinecraftMultiClient.log(rawMessage);
+					}
 
-                    // if (packet.inputStream.read() == 2 && rawMessage.contains("sleep")) return false;
+					// if (packet.inputStream.read() == 2 && rawMessage.contains("sleep")) return false;
 
-                    if (rawMessage.contains("respawn")) this.sendingQueue.put(
-                        new Packet(0x04, DataTypes.varIntBytes(0)));
-                }
+					if (rawMessage.contains("respawn"))
+					{
+						this.sendingQueue.put(new Packet(0x04, DataTypes.varIntBytes(0)));
+					}
+				}
 
-                case 0x1A -> {
-                    DiscordMinecraftMultiClient.log(DataTypes.getString(packet.inputStream));
+				case 0x1A ->
+				{
+					DiscordMinecraftMultiClient.log(DataTypes.getString(packet.inputStream));
 
-                    return false;
-                }
+					return false;
+				}
 
-                default -> {
-//                    DiscordMinecraftMultiClient.log(
-//                        "Unknown packet of ID: " + new BigInteger(String.valueOf(packet.id)).toString(16));
-                }
-            }
-        }
+				default ->
+				{
+					//                    DiscordMinecraftMultiClient.log(
+					//                        "Unknown packet of ID: " + new BigInteger(String.valueOf(packet.id)).toString(16));
+				}
+			}
+		}
 
-        return true;
-    }
+		return true;
+	}
 
-    private boolean initEncryption(String serverID, byte[] serverKey, byte[] token, SessionToken sessionToken)
-        throws NoSuchAlgorithmException, InvalidKeySpecException, IOException, InvalidKeyException,
-               NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException,
-               InvalidAlgorithmParameterException, DataFormatException,
-               InterruptedException
-    {
-        PublicKey    publicKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(serverKey));
-        KeyGenerator keyGen    = KeyGenerator.getInstance("AES");
+	private
+	boolean initEncryption(String serverID, byte[] serverKey, byte[] token, SessionToken sessionToken)
+		throws NoSuchAlgorithmException, InvalidKeySpecException, IOException, InvalidKeyException,
+			   NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException,
+			   InvalidAlgorithmParameterException, DataFormatException, InterruptedException
+	{
+		PublicKey    publicKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(serverKey));
+		KeyGenerator keyGen    = KeyGenerator.getInstance("AES");
 
-        keyGen.init(128);
+		keyGen.init(128);
 
-        SecretKey secretKey  = keyGen.generateKey();
-        String    serverHash = AuthUtil.getServerHash(serverID, publicKey.getEncoded(), secretKey.getEncoded());
+		SecretKey secretKey  = keyGen.generateKey();
+		String    serverHash = AuthUtil.getServerHash(serverID, publicKey.getEncoded(), secretKey.getEncoded());
 
-        // don't want to do a session check if we don't have to since it is uninterruptible
-        this.checkInterrupted();
+		// don't want to do a session check if we don't have to since it is uninterruptible
+		this.checkInterrupted();
 
-        if (!AuthUtil.sessionCheck(serverHash, sessionToken.playerID, sessionToken.id))
-        {
-            DiscordMinecraftMultiClient.log("Failed to check session " + this.playerName);
+		if (!AuthUtil.sessionCheck(serverHash, sessionToken.playerID, sessionToken.id))
+		{
+			DiscordMinecraftMultiClient.log("Failed to check session " + this.playerName);
 
-            this.validSession = false;
+			this.validSession = false;
 
-            return false;
-        }
+			return false;
+		}
 
-        DiscordMinecraftMultiClient.log("Session checked " + this.playerName);
+		DiscordMinecraftMultiClient.log("Session checked " + this.playerName);
 
-        this.validSession = true;
-        Cipher encryptCipher = Cipher.getInstance("RSA");
+		this.validSession = true;
+		Cipher encryptCipher = Cipher.getInstance("RSA");
 
-        encryptCipher.init(Cipher.ENCRYPT_MODE, publicKey);
+		encryptCipher.init(Cipher.ENCRYPT_MODE, publicKey);
 
-        byte[] keyEnc   = DataTypes.byteArrayBytes(encryptCipher.doFinal(secretKey.getEncoded()));
-        byte[] tokenEnc = DataTypes.byteArrayBytes(encryptCipher.doFinal(token));
+		byte[] keyEnc   = DataTypes.byteArrayBytes(encryptCipher.doFinal(secretKey.getEncoded()));
+		byte[] tokenEnc = DataTypes.byteArrayBytes(encryptCipher.doFinal(token));
 
-        this.socket.sendPacket(0x01, DataTypes.concatBytes(keyEnc, tokenEnc));
-        this.socket.switchToEncrypted(secretKey);
+		this.socket.sendPacket(0x01, DataTypes.concatBytes(keyEnc, tokenEnc));
+		this.socket.switchToEncrypted(secretKey);
 
-        while (true)
-        {
-            Packet packet = this.socket.readPacket();
+		while (true)
+		{
+			Packet packet = this.socket.readPacket();
 
-            if (packet.id < 0)
-            {
-                DiscordMinecraftMultiClient.log("LOGIN FAILED " + this.playerName);
+			if (packet.id < 0)
+			{
+				DiscordMinecraftMultiClient.log("LOGIN FAILED " + this.playerName);
 
-                return false;
-            }
-            else if (packet.id == 0x00)
-            {
-                DiscordMinecraftMultiClient.log(
-                    "LOGIN REJECTED " + this.playerName + ": " + DataTypes.getString(packet.inputStream));
+				return false;
+			}
+			else if (packet.id == 0x00)
+			{
+				DiscordMinecraftMultiClient.log(
+					"LOGIN REJECTED " + this.playerName + ": " + DataTypes.getString(packet.inputStream));
 
-                return false;
-            }
-            else if (packet.id == 0x02)
-            {
-                DiscordMinecraftMultiClient.log("LOGIN SUCCESS " + this.playerName);
+				return false;
+			}
+			else if (packet.id == 0x02)
+			{
+				DiscordMinecraftMultiClient.log("LOGIN SUCCESS " + this.playerName);
 
-                this.loginPhase = false;
+				this.loginPhase = false;
 
-                return true;
-            }
-            else
-            {
-                this.handlePacket(packet);
-            }
-        }
-    }
+				return true;
+			}
+			else
+			{
+				this.handlePacket(packet);
+			}
+		}
+	}
 
 
 }
