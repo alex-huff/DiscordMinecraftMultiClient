@@ -29,7 +29,6 @@ class AuthUtil
 		token.playerName   = authResponse.getProfile().getName();
 		token.playerID     = authResponse.getProfile().getId();
 		token.refreshToken = authResponse.getRefreshToken();
-
 		return token;
 	}
 

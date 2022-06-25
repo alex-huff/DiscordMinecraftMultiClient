@@ -86,7 +86,8 @@ class McClient
 	public
 	void queueMessage(String message) throws InterruptedException
 	{
-		this.sendingQueue.put(new Packet(0x03, DataTypes.stringBytes(message)));
+		DiscordMinecraftMultiClient.log("Not yet implemented in > 1.19 since chat messages must be cryptographically signed.");
+		// this.sendingQueue.put(new Packet(0x04, DataTypes.stringBytes(message)));
 	}
 
 	public
@@ -294,7 +295,7 @@ class McClient
 			return;
 		}
 
-		while (this.handlePacket(socket.readPacket()))
+		while (this.handlePacket(this.socket.readPacket()))
 		{
 		}
 	}
@@ -305,22 +306,24 @@ class McClient
 			   IllegalBlockSizeException, BadPaddingException, InvalidKeyException, InvalidAlgorithmParameterException,
 			   DataFormatException, InterruptedException
 	{
-		byte[] protocolVersion = DataTypes.varIntBytes(757);
-		byte[] serverPort      = DataTypes.uShortBytes(this.port);
-		byte[] nextState       = DataTypes.varIntBytes(2);
+		byte[] protocolVersion = DataTypes.varIntBytes(759); // Protocol version number
+		byte[] serverPort      = DataTypes.uShortBytes(this.port); // Port
+		byte[] nextState       = DataTypes.varIntBytes(2); // 2 to initiate login phase, 1 for status phase
 		byte[] handshakePacket = DataTypes.concatBytes(protocolVersion, DataTypes.stringBytes(this.serverIP),
 													   serverPort, nextState
 		);
 
-		socket.sendPacket(0x00, handshakePacket);
+		this.socket.sendPacket(0x00, handshakePacket);
 
-		byte[] login_packet = DataTypes.stringBytes(sessionToken.playerName);
+		byte[] playerName   = DataTypes.stringBytes(sessionToken.playerName);
+		byte[] hasSigData   = DataTypes.booleanBytes(false);
+		byte[] login_packet = DataTypes.concatBytes(playerName, hasSigData);
 
-		socket.sendPacket(0x00, login_packet);
+		this.socket.sendPacket(0x00, login_packet);
 
 		while (true)
 		{
-			Packet packet = socket.readPacket();
+			Packet packet = this.socket.readPacket();
 
 			switch (packet.id)
 			{
@@ -401,8 +404,10 @@ class McClient
 		{
 			switch (packet.id)
 			{
+				// Set compression
 				case 0x03 -> this.socket.setCompressionThreshold(DataTypes.getVarInt(packet.inputStream));
 
+				// Login plugin request
 				case 0x04 ->
 				{
 					int messageID = DataTypes.getVarInt(packet.inputStream);
@@ -414,39 +419,42 @@ class McClient
 				default -> DiscordMinecraftMultiClient.log("Unknown packet of ID: " + packet.id);
 			}
 		}
-		else
+		else // play phase
 		{
 			switch (packet.id)
 			{
-				case 0x21 -> this.sendingQueue.put(new Packet(0x0F, packet.inputStream.readAllBytes()));
+				// Keep alive
+				case 0x1E -> this.sendingQueue.put(new Packet(0x11, packet.inputStream.readAllBytes()));
 
-				case 0x26 -> this.startSenderThread();
+				// Join game
+				case 0x23 -> this.startSenderThread();
 
-				case 0x0F ->
+				// System chat message
+				case 0x5F ->
 				{
-					String rawJson    = DataTypes.getString(packet.inputStream);
-					String rawMessage = ParseUtils.getRawMessage(rawJson);
-
-					if (rawMessage == null)
-					{
-						break;
-					}
-
-					// if system output enabled
-					if (this.sysOut.get() % 2 == 0)
-					{
-						DiscordMinecraftMultiClient.log(rawMessage);
-					}
-
-					// if (packet.inputStream.read() == 2 && rawMessage.contains("sleep")) return false;
-
-					if (rawMessage.contains("respawn"))
-					{
-						this.sendingQueue.put(new Packet(0x04, DataTypes.varIntBytes(0)));
-					}
+					String rawJson = DataTypes.getString(packet.inputStream);
+					this.handleMessage(rawJson);
 				}
 
-				case 0x1A ->
+				// Chat message
+				case 0x30 ->
+				{
+					String  toProcess;
+					String  rawJsonSigned = DataTypes.getString(packet.inputStream);
+					boolean hasUnsigned   = DataTypes.getBoolean(packet.inputStream);
+					if (hasUnsigned) // Prefer the unsigned, server modifiable message
+					{
+						toProcess = DataTypes.getString(packet.inputStream);
+					}
+					else
+					{
+						toProcess = rawJsonSigned;
+					}
+					this.handleMessage(toProcess);
+				}
+
+				// Disconnect (play)
+				case 0x17 ->
 				{
 					DiscordMinecraftMultiClient.log(DataTypes.getString(packet.inputStream));
 
@@ -462,6 +470,27 @@ class McClient
 		}
 
 		return true;
+	}
+
+	private
+	void handleMessage(String rawJson) throws InterruptedException
+	{
+		String rawMessage = ParseUtils.getRawMessage(rawJson);
+		if (rawMessage == null)
+		{
+			return;
+		}
+		// if system output enabled
+		if (this.sysOut.get() % 2 == 0)
+		{
+			DiscordMinecraftMultiClient.log(rawMessage);
+		}
+		// if (packet.inputStream.read() == 2 && rawMessage.contains("sleep")) return false;
+		if (rawMessage.contains("respawn"))
+		{
+			// Client status respawn request
+			this.sendingQueue.put(new Packet(0x06, DataTypes.varIntBytes(0)));
+		}
 	}
 
 	private
@@ -497,10 +526,11 @@ class McClient
 
 		encryptCipher.init(Cipher.ENCRYPT_MODE, publicKey);
 
-		byte[] keyEnc   = DataTypes.byteArrayBytes(encryptCipher.doFinal(secretKey.getEncoded()));
-		byte[] tokenEnc = DataTypes.byteArrayBytes(encryptCipher.doFinal(token));
+		byte[] keyEnc         = DataTypes.byteArrayBytes(encryptCipher.doFinal(secretKey.getEncoded()));
+		byte[] hasVerifyToken = DataTypes.booleanBytes(true);
+		byte[] tokenEnc       = DataTypes.byteArrayBytes(encryptCipher.doFinal(token));
 
-		this.socket.sendPacket(0x01, DataTypes.concatBytes(keyEnc, tokenEnc));
+		this.socket.sendPacket(0x01, DataTypes.concatBytes(keyEnc, hasVerifyToken, tokenEnc));
 		this.socket.switchToEncrypted(secretKey);
 
 		while (true)
@@ -513,6 +543,7 @@ class McClient
 
 				return false;
 			}
+			// Disconnect (login)
 			else if (packet.id == 0x00)
 			{
 				DiscordMinecraftMultiClient.log(
@@ -520,6 +551,7 @@ class McClient
 
 				return false;
 			}
+			// Login success
 			else if (packet.id == 0x02)
 			{
 				DiscordMinecraftMultiClient.log("LOGIN SUCCESS " + this.playerName);
@@ -528,6 +560,10 @@ class McClient
 
 				return true;
 			}
+			/*
+			It seems that these packets may be received while initializing encryption, or later on.
+			We delegate them to the normal handler.
+			 */
 			else
 			{
 				this.handlePacket(packet);
