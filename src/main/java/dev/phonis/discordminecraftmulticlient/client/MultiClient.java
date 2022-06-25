@@ -32,9 +32,8 @@ class MultiClient
 			}
 
 			FileInputStream fileInputStream = new FileInputStream(accountsFile);
-			BufferedReader  reader          = new BufferedReader(
-				new InputStreamReader(fileInputStream, StandardCharsets.UTF_8));
-			String          line;
+			BufferedReader reader = new BufferedReader(new InputStreamReader(fileInputStream, StandardCharsets.UTF_8));
+			String line;
 
 			while ((line = reader.readLine()) != null)
 			{
@@ -79,8 +78,7 @@ class MultiClient
 	void toFile(File accountsFile) throws FileNotFoundException
 	{
 		FileOutputStream fileOutputStream = new FileOutputStream(accountsFile);
-		BufferedWriter   writer           = new BufferedWriter(
-			new OutputStreamWriter(fileOutputStream, StandardCharsets.UTF_8));
+		BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(fileOutputStream, StandardCharsets.UTF_8));
 
 		try
 		{
@@ -218,9 +216,7 @@ class MultiClient
 	}
 
 	public synchronized
-	<T extends Throwable> boolean withClientThrowable(
-		String name, ThrowableConsumer<McClient, T> consumer
-	) throws T
+	<T extends Throwable> boolean withClientThrowable(String name, ThrowableConsumer<McClient, T> consumer) throws T
 	{
 		McClient client;
 

@@ -2,7 +2,6 @@ package dev.phonis.discordminecraftmulticlient;
 
 import dev.phonis.discordminecraftmulticlient.auth.Authenticator;
 import dev.phonis.discordminecraftmulticlient.client.LoginQueue;
-import dev.phonis.discordminecraftmulticlient.client.McClient;
 import dev.phonis.discordminecraftmulticlient.client.MultiClient;
 import dev.phonis.discordminecraftmulticlient.discord.DiscordManager;
 
@@ -32,8 +31,9 @@ class DiscordMinecraftMultiClient
 			}
 
 			FileInputStream fileInputStream = new FileInputStream(DiscordMinecraftMultiClient.whitelistFile);
-			BufferedReader reader = new BufferedReader(new InputStreamReader(fileInputStream, StandardCharsets.UTF_8));
-			String line;
+			BufferedReader  reader          = new BufferedReader(
+				new InputStreamReader(fileInputStream, StandardCharsets.UTF_8));
+			String          line;
 
 			while ((line = reader.readLine()) != null)
 			{
@@ -123,8 +123,9 @@ class DiscordMinecraftMultiClient
 		}
 
 		FileInputStream fileInputStream = new FileInputStream(DiscordMinecraftMultiClient.tokenFile);
-		BufferedReader reader = new BufferedReader(new InputStreamReader(fileInputStream, StandardCharsets.UTF_8));
-		String ret = reader.readLine();
+		BufferedReader  reader          = new BufferedReader(
+			new InputStreamReader(fileInputStream, StandardCharsets.UTF_8));
+		String          ret             = reader.readLine();
 
 		reader.close();
 
@@ -135,7 +136,8 @@ class DiscordMinecraftMultiClient
 	void saveWhitelist() throws FileNotFoundException
 	{
 		FileOutputStream fileOutputStream = new FileOutputStream(DiscordMinecraftMultiClient.whitelistFile);
-		BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(fileOutputStream, StandardCharsets.UTF_8));
+		BufferedWriter   writer           = new BufferedWriter(
+			new OutputStreamWriter(fileOutputStream, StandardCharsets.UTF_8));
 
 		try
 		{

@@ -22,7 +22,7 @@ class Authenticator
 			try
 			{
 				SessionResolver sessionResolver = Authenticator.sessionQueue.take();
-				SessionToken sessionToken = null;
+				SessionToken    sessionToken    = null;
 
 				while (sessionToken == null)
 				{
@@ -64,17 +64,15 @@ class Authenticator
 	}
 
 	public static
-	SessionToken getOrRefreshSession(
-		SessionToken sessionToken, String username, String password
-	) throws InterruptedException, ExecutionException
+	SessionToken getOrRefreshSession(SessionToken sessionToken, String username, String password)
+		throws InterruptedException, ExecutionException
 	{
 		return Authenticator.getSessionResolver(sessionToken, username, password).get();
 	}
 
 	private static
-	SessionResolver getSessionResolver(
-		SessionToken sessionToken, String username, String password
-	) throws InterruptedException
+	SessionResolver getSessionResolver(SessionToken sessionToken, String username, String password)
+		throws InterruptedException
 	{
 		SessionResolver sessionResolver = new SessionResolver(sessionToken, username, password);
 

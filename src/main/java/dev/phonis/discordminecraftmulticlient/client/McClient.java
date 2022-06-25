@@ -252,8 +252,7 @@ class McClient
 		this.loginPhase   = true;
 		this.sessionToken = (this.validSession) ? this.sessionToken
 												: Authenticator.getOrRefreshSession(this.sessionToken, this.username,
-													this.password
-												);
+													this.password);
 		String old = this.playerName;
 
 		// let everyone know who is waiting on what this client's player name is
@@ -268,8 +267,8 @@ class McClient
 			this.nameChangeHandler.onNameChange(this, this.playerName, old);
 		}
 
-		DiscordMinecraftMultiClient.embedWithPlayer(
-			this.sessionToken.playerName, "Auth", "Logged in as: " + this.sessionToken.playerName);
+		DiscordMinecraftMultiClient.embedWithPlayer(this.sessionToken.playerName, "Auth",
+			"Logged in as: " + this.sessionToken.playerName);
 		LoginQueue.waitForTurn(); // avoid connection throttled
         /*
         Thread Closing
@@ -311,8 +310,7 @@ class McClient
 		byte[] serverPort      = DataTypes.uShortBytes(this.port); // Port
 		byte[] nextState       = DataTypes.varIntBytes(2); // 2 to initiate login phase, 1 for status phase
 		byte[] handshakePacket = DataTypes.concatBytes(protocolVersion, DataTypes.stringBytes(this.serverIP),
-			serverPort, nextState
-		);
+			serverPort, nextState);
 
 		this.socket.sendPacket(0x00, handshakePacket);
 
@@ -362,8 +360,7 @@ class McClient
 	private
 	void startSenderThread() throws InterruptedException
 	{
-		LockUtils.withLockInterruptable(
-			this.shutdownLock, // don't start sender thread while client shutting down
+		LockUtils.withLockInterruptable(this.shutdownLock, // don't start sender thread while client shutting down
 			() ->
 			{
 				this.checkInterrupted();
@@ -394,8 +391,7 @@ class McClient
 				});
 
 				this.senderThread.start();
-			}
-		);
+			});
 	}
 
 	private
@@ -413,8 +409,8 @@ class McClient
 				{
 					int messageID = DataTypes.getVarInt(packet.inputStream);
 
-					this.socket.sendPacket(
-						0x02, DataTypes.concatBytes(DataTypes.varIntBytes(messageID), DataTypes.booleanBytes(false)));
+					this.socket.sendPacket(0x02,
+						DataTypes.concatBytes(DataTypes.varIntBytes(messageID), DataTypes.booleanBytes(false)));
 				}
 
 				default -> DiscordMinecraftMultiClient.log("Unknown packet of ID: " + packet.id);

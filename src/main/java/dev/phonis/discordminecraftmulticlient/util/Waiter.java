@@ -7,9 +7,9 @@ public
 class Waiter
 {
 
-	private final ReentrantLock waitLock = new ReentrantLock();
+	private final ReentrantLock waitLock       = new ReentrantLock();
 	private final Condition     completeSignal = waitLock.newCondition();
-	private       boolean       complete = false;
+	private       boolean       complete       = false;
 
 	public
 	void rest() throws InterruptedException

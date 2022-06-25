@@ -73,7 +73,7 @@ class DataTypes
 	public static
 	byte[] booleanBytes(boolean value)
 	{
-		return new byte[]{(byte) (value ? 0x01 : 0x00)};
+		return new byte[]{ (byte) (value ? 0x01 : 0x00) };
 	}
 
 	public static

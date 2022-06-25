@@ -59,8 +59,7 @@ class DiscordManager extends ListenerAdapter
 		this.jda = JDABuilder.create(token, DiscordManager.intents)
 							 .setActivity(EntityBuilder.createActivity(":)", null, Activity.ActivityType.DEFAULT))
 							 .disableCache(CacheFlag.ACTIVITY, CacheFlag.CLIENT_STATUS, CacheFlag.VOICE_STATE,
-										   CacheFlag.EMOTE, CacheFlag.ONLINE_STATUS
-							 ).build();
+								 CacheFlag.EMOTE, CacheFlag.ONLINE_STATUS).build();
 
 		this.jda.awaitReady();
 
@@ -70,25 +69,20 @@ class DiscordManager extends ListenerAdapter
 	}
 
 	private static
-	MessageEmbed embed(
-		String title, String description, List<MessageEmbed.Field> fields, MessageEmbed.Thumbnail thumbnail
-	)
+	MessageEmbed embed(String title, String description, List<MessageEmbed.Field> fields,
+					   MessageEmbed.Thumbnail thumbnail)
 	{
 		return new MessageEmbed(null, title, description, EmbedType.RICH, null, 1238, thumbnail, null, null, null,
-								new MessageEmbed.Footer("CosmicAFK",
-														"https://ddragon.leagueoflegends.com/cdn/10.19.1/img/champion/Twitch.png",
-														null
-								), null, fields
-		);
+			new MessageEmbed.Footer("CosmicAFK",
+				"https://ddragon.leagueoflegends.com/cdn/10.19.1/img/champion/Twitch.png", null), null, fields);
 	}
 
 	private static
-	MessageEmbed embed(
-		String title, String description, List<MessageEmbed.Field> fields, String iconURL, int width, int height
-	)
+	MessageEmbed embed(String title, String description, List<MessageEmbed.Field> fields, String iconURL, int width,
+					   int height)
 	{
-		return DiscordManager.embed(
-			title, description, fields, new MessageEmbed.Thumbnail(iconURL, null, width, height));
+		return DiscordManager.embed(title, description, fields,
+			new MessageEmbed.Thumbnail(iconURL, null, width, height));
 	}
 
 	public
@@ -262,8 +256,8 @@ class DiscordManager extends ListenerAdapter
 
 				String message = messageBuilder.toString();
 
-				if (DiscordMinecraftMultiClient.multiClient.withClientThrowable(
-					name, client -> client.queueMessage(message)))
+				if (DiscordMinecraftMultiClient.multiClient.withClientThrowable(name,
+					client -> client.queueMessage(message)))
 				{
 					this.sendPlayerEmbed(name, "Sender", "Sending '" + message + "' as " + name);
 				}

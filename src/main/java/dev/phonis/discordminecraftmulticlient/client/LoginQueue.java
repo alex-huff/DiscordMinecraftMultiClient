@@ -12,25 +12,22 @@ class LoginQueue
 
 	private static final BlockingQueue<Waiter> loginQueue      = new LinkedBlockingQueue<>();
 	public static final  Thread                restarterThread = new Thread(() ->
-																			{
-																				while (!Thread.currentThread()
-																							  .isInterrupted())
-																				{
-																					try
-																					{
-																						LoginQueue.loginQueue.take()
-																											 .wake();
-																						Thread.sleep(10000);
-																					}
-																					catch (InterruptedException e)
-																					{
-																						break;
-																					}
-																				}
+	{
+		while (!Thread.currentThread().isInterrupted())
+		{
+			try
+			{
+				LoginQueue.loginQueue.take().wake();
+				Thread.sleep(10000);
+			}
+			catch (InterruptedException e)
+			{
+				break;
+			}
+		}
 
-																				DiscordMinecraftMultiClient.log(
-																					"Closing restarter thread");
-																			});
+		DiscordMinecraftMultiClient.log("Closing restarter thread");
+	});
 
 	static
 	{
