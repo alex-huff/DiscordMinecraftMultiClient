@@ -6,8 +6,8 @@ public
 class AuthenticationBackoff implements ExponentialBackoff
 {
 
-	private final long   baseTimeout    = 10000; // 10 seconds
-	private final long   maxTimeout     = 600000; // 10 minutes
+	private final long   baseTimeout    = 20000; // 20 seconds
+	private final long   maxTimeout     = 6000000; // 100 minutes
 	private final double multiplier     = 1.5d; // exponent base
 	private       long   currentTimeout = this.baseTimeout;
 

@@ -55,7 +55,8 @@ class Authenticator
 																							   }
 
 																							   sessionResolver.complete(
-																								   sessionToken);
+                                                                                                   sessionToken);
+                                                                                               Thread.sleep(15 * 1000);
 																						   }
 																						   catch (
 																							   InterruptedException e)
@@ -78,15 +79,17 @@ class Authenticator
 	}
 
 	public static
-	SessionToken getOrRefreshSession(SessionToken sessionToken, String username, String password)
-		throws InterruptedException, ExecutionException
+	SessionToken getOrRefreshSession(
+		SessionToken sessionToken, String username, String password
+	) throws InterruptedException, ExecutionException
 	{
 		return Authenticator.getSessionResolver(sessionToken, username, password).get();
 	}
 
 	private static
-	SessionResolver getSessionResolver(SessionToken sessionToken, String username, String password)
-		throws InterruptedException
+	SessionResolver getSessionResolver(
+		SessionToken sessionToken, String username, String password
+	) throws InterruptedException
 	{
 		SessionResolver sessionResolver = new SessionResolver(sessionToken, username, password);
 
@@ -135,5 +138,4 @@ class Authenticator
 			throw new InterruptedException();
 		}
 	}
-
 }
