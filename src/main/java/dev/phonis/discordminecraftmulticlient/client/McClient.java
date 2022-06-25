@@ -86,7 +86,8 @@ class McClient
 	public
 	void queueMessage(String message) throws InterruptedException
 	{
-		DiscordMinecraftMultiClient.log("Not yet implemented in > 1.19 since chat messages must be cryptographically signed.");
+		DiscordMinecraftMultiClient.log(
+			"Not yet implemented in > 1.19 since chat messages must be cryptographically signed.");
 		// this.sendingQueue.put(new Packet(0x04, DataTypes.stringBytes(message)));
 	}
 
@@ -251,7 +252,7 @@ class McClient
 		this.loginPhase   = true;
 		this.sessionToken = (this.validSession) ? this.sessionToken
 												: Authenticator.getOrRefreshSession(this.sessionToken, this.username,
-																					this.password
+													this.password
 												);
 		String old = this.playerName;
 
@@ -310,7 +311,7 @@ class McClient
 		byte[] serverPort      = DataTypes.uShortBytes(this.port); // Port
 		byte[] nextState       = DataTypes.varIntBytes(2); // 2 to initiate login phase, 1 for status phase
 		byte[] handshakePacket = DataTypes.concatBytes(protocolVersion, DataTypes.stringBytes(this.serverIP),
-													   serverPort, nextState
+			serverPort, nextState
 		);
 
 		this.socket.sendPacket(0x00, handshakePacket);
@@ -369,28 +370,28 @@ class McClient
 				this.sendingQueue.clear();
 
 				this.senderThread = new SafelyStoppableThread(() ->
-															  {
-																  while (!Thread.currentThread().isInterrupted())
-																  {
-																	  try
-																	  {
-																		  Packet sendPacket = this.sendingQueue.take();
+				{
+					while (!Thread.currentThread().isInterrupted())
+					{
+						try
+						{
+							Packet sendPacket = this.sendingQueue.take();
 
-																		  if (!Thread.currentThread().isInterrupted())
-																		  {
-																			  this.socket.sendPacket(sendPacket);
-																		  }
-																	  }
-																	  catch (IOException e)
-																	  {
-																		  e.printStackTrace();
-																	  }
-																	  catch (InterruptedException e)
-																	  {
-																		  break;
-																	  }
-																  }
-															  });
+							if (!Thread.currentThread().isInterrupted())
+							{
+								this.socket.sendPacket(sendPacket);
+							}
+						}
+						catch (IOException e)
+						{
+							e.printStackTrace();
+						}
+						catch (InterruptedException e)
+						{
+							break;
+						}
+					}
+				});
 
 				this.senderThread.start();
 			}

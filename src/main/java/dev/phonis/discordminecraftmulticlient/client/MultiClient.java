@@ -26,24 +26,28 @@ class MultiClient
 
 		try
 		{
-            if (accountsFile.createNewFile())
-            {
-                DiscordMinecraftMultiClient.log("Creating accounts file");
-            }
+			if (accountsFile.createNewFile())
+			{
+				DiscordMinecraftMultiClient.log("Creating accounts file");
+			}
 
 			FileInputStream fileInputStream = new FileInputStream(accountsFile);
-			BufferedReader reader = new BufferedReader(new InputStreamReader(fileInputStream, StandardCharsets.UTF_8));
-			String line;
+			BufferedReader  reader          = new BufferedReader(
+				new InputStreamReader(fileInputStream, StandardCharsets.UTF_8));
+			String          line;
 
 			while ((line = reader.readLine()) != null)
 			{
-				if (line.startsWith("#")) continue;
+				if (line.startsWith("#"))
+				{
+					continue;
+				}
 				String[] params = line.split(" ");
 
-                if (params.length != 4)
-                {
-                    continue;
-                }
+				if (params.length != 4)
+				{
+					continue;
+				}
 
 				int port;
 
@@ -75,7 +79,8 @@ class MultiClient
 	void toFile(File accountsFile) throws FileNotFoundException
 	{
 		FileOutputStream fileOutputStream = new FileOutputStream(accountsFile);
-		BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(fileOutputStream, StandardCharsets.UTF_8));
+		BufferedWriter   writer           = new BufferedWriter(
+			new OutputStreamWriter(fileOutputStream, StandardCharsets.UTF_8));
 
 		try
 		{
@@ -202,10 +207,10 @@ class MultiClient
 			client = this.clientMap.get(name);
 		}
 
-        if (client == null)
-        {
-            return false;
-        }
+		if (client == null)
+		{
+			return false;
+		}
 
 		consumer.accept(client);
 
@@ -224,10 +229,10 @@ class MultiClient
 			client = this.clientMap.get(name);
 		}
 
-        if (client == null)
-        {
-            return false;
-        }
+		if (client == null)
+		{
+			return false;
+		}
 
 		consumer.accept(client);
 

@@ -14,64 +14,49 @@ class Authenticator
 
 	private static final BlockingQueue<SessionResolver> sessionQueue  = new LinkedBlockingQueue<>();
 	public static final  Thread                         sessionThread = new Thread(() ->
-																				   {
-																					   ExponentialBackoff backoff
-																						   = new AuthenticationBackoff();
+	{
+		ExponentialBackoff backoff = new AuthenticationBackoff();
 
-																					   while (!Thread.currentThread()
-																									 .isInterrupted())
-																					   {
-																						   try
-																						   {
-																							   SessionResolver
-																											sessionResolver
-																								   = Authenticator.sessionQueue.take();
-																							   SessionToken sessionToken
-																								   = null;
+		while (!Thread.currentThread().isInterrupted())
+		{
+			try
+			{
+				SessionResolver sessionResolver = Authenticator.sessionQueue.take();
+				SessionToken sessionToken = null;
 
-																							   while (sessionToken ==
-																									  null)
-																							   {
-																								   try
-																								   {
-																									   sessionToken
-																										   = Authenticator.tryGetOrRefreshToken(
-																										   sessionResolver);
+				while (sessionToken == null)
+				{
+					try
+					{
+						sessionToken = Authenticator.tryGetOrRefreshToken(sessionResolver);
 
-																									   backoff.onSuccess(); // yay!
-																								   }
-																								   catch (
-																									   MicrosoftAuthenticationException e)
-																								   {
-																									   DiscordMinecraftMultiClient.log(
-																										   "Auth error on " +
-																										   sessionResolver.username +
-																										   ", backing off: " +
-																										   backoff.getWaitTime());
-																									   DiscordMinecraftMultiClient.log(
-																										   e.getMessage());
-																									   backoff.backoff(); // f
-																								   }
-																							   }
+						backoff.onSuccess(); // yay!
+					}
+					catch (MicrosoftAuthenticationException e)
+					{
+						DiscordMinecraftMultiClient.log(
+							"Auth error on " + sessionResolver.username + ", backing off: " + backoff.getWaitTime());
+						DiscordMinecraftMultiClient.log(e.getMessage());
+						backoff.backoff(); // f
+					}
+				}
 
-																							   sessionResolver.complete(
-                                                                                                   sessionToken);
-                                                                                               Thread.sleep(15 * 1000);
-																						   }
-																						   catch (
-																							   InterruptedException e)
-																						   {
-																							   break;
-																						   }
-																					   }
+				sessionResolver.complete(sessionToken);
+				// Wait 15 seconds in
+				// between
+				// authentications
+				Thread.sleep(15000);
+			}
+			catch (InterruptedException e)
+			{
+				break;
+			}
+		}
 
-																					   sessionQueue.forEach(
-																						   sessionResolver -> sessionResolver.cancel(
-																							   true));
-																					   sessionQueue.clear();
-																					   DiscordMinecraftMultiClient.log(
-																						   "Closing session thread");
-																				   });
+		sessionQueue.forEach(sessionResolver -> sessionResolver.cancel(true));
+		sessionQueue.clear();
+		DiscordMinecraftMultiClient.log("Closing session thread");
+	});
 
 	static
 	{
