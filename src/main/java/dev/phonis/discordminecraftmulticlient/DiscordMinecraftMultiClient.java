@@ -106,7 +106,8 @@ class DiscordMinecraftMultiClient
 	public static
 	void shutdown() throws FileNotFoundException, InterruptedException
 	{
-		DiscordMinecraftMultiClient.multiClient.toFile(DiscordMinecraftMultiClient.accountsFile);
+		// Currently, the accounts file can't change during runtime
+		// DiscordMinecraftMultiClient.multiClient.toFile(DiscordMinecraftMultiClient.accountsFile);
 		DiscordMinecraftMultiClient.saveWhitelist();
 		LoginQueue.restarterThread.interrupt();
 		Authenticator.sessionThread.interrupt();
