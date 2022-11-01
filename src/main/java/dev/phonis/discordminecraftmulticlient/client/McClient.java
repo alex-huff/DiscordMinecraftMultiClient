@@ -483,7 +483,7 @@ class McClient
 			DiscordMinecraftMultiClient.log(rawMessage);
 		}
 		// if (packet.inputStream.read() == 2 && rawMessage.contains("sleep")) return false;
-		if (this.playerName.equals("RecallerBot") && (rawMessage.contains("recall") || rawMessage.contains("b"))) return false;
+		if (this.playerName.equals("RecallerBot") && rawMessage.contains("recall")) return false;
 		if (rawMessage.contains("respawn"))
 		{
 			// Client status respawn request
