@@ -447,7 +447,7 @@ class McClient
 					{
 						toProcess = rawJsonSigned;
 					}
-					this.handleMessage(toProcess);
+					if (!this.handleMessage(toProcess)) return false;
 				}
 
 				// Disconnect (play)
@@ -470,12 +470,12 @@ class McClient
 	}
 
 	private
-	void handleMessage(String rawJson) throws InterruptedException
+	boolean handleMessage(String rawJson) throws InterruptedException
 	{
 		String rawMessage = ParseUtils.getRawMessage(rawJson);
 		if (rawMessage == null)
 		{
-			return;
+			return true;
 		}
 		// if system output enabled
 		if (this.sysOut.get() % 2 == 0)
@@ -483,11 +483,13 @@ class McClient
 			DiscordMinecraftMultiClient.log(rawMessage);
 		}
 		// if (packet.inputStream.read() == 2 && rawMessage.contains("sleep")) return false;
+		if (this.playerName.equals("RecallerBot") && (rawMessage.contains("recall") || rawMessage.contains("b"))) return false;
 		if (rawMessage.contains("respawn"))
 		{
 			// Client status respawn request
 			this.sendingQueue.put(new Packet(0x06, DataTypes.varIntBytes(0)));
 		}
+		return true;
 	}
 
 	private
