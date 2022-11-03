@@ -119,11 +119,13 @@ class DiscordManager extends ListenerAdapter
 			return;
 		}
 
-		String line = event.getMessage().getContentRaw();
+		String[] lines = event.getMessage().getContentRaw().split("\n");
 
 		try
 		{
-			this.handleCommand(line);
+			for (String line : lines) {
+				this.handleCommand(line);
+			}
 		}
 		catch (InterruptedException | FileNotFoundException e)
 		{
